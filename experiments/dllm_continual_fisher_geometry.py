@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import gc
 import hashlib
 import json
 import math
@@ -128,6 +129,163 @@ def _collect_gradients(model, rows, probes, pad_id, device, seed, mask_min, mask
     return {name: torch.stack(values) for name, values in collected.items()}, losses, masks
 
 
+def _parameter_layout(model, parameters) -> tuple[int, dict[str, tuple[int, int]]]:
+    names = {id(parameter): name for name, parameter in model.named_parameters()}
+    offset = 0
+    layout = {}
+    for parameter in parameters:
+        name = names[id(parameter)]
+        layout[name] = (offset, offset + parameter.numel())
+        offset += parameter.numel()
+    return offset, layout
+
+
+def _full_gradient(loss, parameters, size: int) -> torch.Tensor:
+    gradients = torch.autograd.grad(loss, parameters, allow_unused=True)
+    vector = torch.empty(size, dtype=torch.float32)
+    offset = 0
+    for parameter, gradient in zip(parameters, gradients):
+        width = parameter.numel()
+        if gradient is None:
+            vector[offset : offset + width].zero_()
+        else:
+            vector[offset : offset + width].copy_(gradient.detach().float().cpu().reshape(-1))
+        offset += width
+    return vector
+
+
+def _full_fisher_pass(
+    model,
+    rows,
+    parameters,
+    size,
+    probe_layout,
+    pad_id,
+    device,
+    seed,
+    mean=None,
+    retain_vectors=False,
+):
+    generator = torch.Generator(device=device).manual_seed(seed)
+    gradient_sum = torch.zeros(size, dtype=torch.float64) if mean is None else None
+    diagonal_sum = torch.zeros(size, dtype=torch.float64) if mean is None else None
+    projection_square_sum = 0.0
+    vectors = []
+    slices = {name: [] for name in PROBES}
+    losses = []
+    masks = []
+    model.eval()
+    for index, row in enumerate(rows):
+        loss, mask_audit = _audited_sft_loss(
+            model, row, pad_id, device, generator, 1e-3, 1.0
+        )
+        vector = _full_gradient(loss, parameters, size)
+        value64 = vector.double()
+        if mean is None:
+            gradient_sum.add_(value64)
+            diagonal_sum.addcmul_(value64, value64)
+            for name, (left, right) in probe_layout.items():
+                slices[name].append(vector[left:right].clone())
+        else:
+            projection_square_sum += float(torch.dot(value64, mean).square())
+        if retain_vectors:
+            vectors.append(vector)
+            if mean is not None:
+                for name, (left, right) in probe_layout.items():
+                    slices[name].append(vector[left:right].clone())
+        losses.append(float(loss.detach().cpu()))
+        masks.append(mask_audit)
+        model.zero_grad(set_to_none=True)
+        del value64
+        if not retain_vectors:
+            del vector
+        print(f"full_gradient={index + 1}/{len(rows)} seed={seed}", flush=True)
+    return {
+        "gradient_sum": gradient_sum,
+        "diagonal_sum": diagonal_sum,
+        "projection_square_sum": projection_square_sum,
+        "vectors": vectors,
+        "slices": slices,
+        "losses": losses,
+        "masks": masks,
+    }
+
+
+def _test_gram(vectors: list[torch.Tensor], size: int, chunk_size: int) -> torch.Tensor:
+    gram = torch.zeros((len(vectors), len(vectors)), dtype=torch.float64)
+    for left in range(0, size, chunk_size):
+        right = min(left + chunk_size, size)
+        block = torch.stack([vector[left:right] for vector in vectors]).double()
+        gram.addmm_(block, block.T)
+        del block
+        print(f"test_gram_parameters={right}/{size}", flush=True)
+    return gram
+
+
+def _geometry_from_sufficient(
+    mean: torch.Tensor,
+    calibration_diagonal: torch.Tensor,
+    calibration_projection_square_mean: float,
+    test_diagonal: torch.Tensor,
+    test_projection_square_mean: float,
+    test_gram: torch.Tensor,
+    calibration_examples: int,
+    test_examples: int,
+) -> dict:
+    mu_norm_sq = torch.dot(mean, mean)
+    if not float(mu_norm_sq) > 0.0:
+        raise ValueError("zero calibration mean gradient")
+    coefficient = torch.as_tensor(calibration_projection_square_mean) / mu_norm_sq.square()
+    normalized_test_gram = test_gram / test_examples
+    fisher_norm_sq = normalized_test_gram.square().sum()
+    rank1_inner = coefficient * test_projection_square_mean
+    rank1_norm_sq = coefficient.square() * mu_norm_sq.square()
+    diagonal_inner = torch.dot(test_diagonal, calibration_diagonal)
+    diagonal_norm_sq = calibration_diagonal.square().sum()
+    rank1_error = torch.sqrt(
+        (fisher_norm_sq - 2 * rank1_inner + rank1_norm_sq).clamp_min(0) / fisher_norm_sq
+    )
+    diagonal_error = torch.sqrt(
+        (fisher_norm_sq - 2 * diagonal_inner + diagonal_norm_sq).clamp_min(0) / fisher_norm_sq
+    )
+    test_coefficient = torch.as_tensor(test_projection_square_mean) / mu_norm_sq.square()
+    direction_oracle_error = torch.sqrt(
+        (
+            fisher_norm_sq
+            - 2 * test_coefficient * test_projection_square_mean
+            + test_coefficient.square() * mu_norm_sq.square()
+        ).clamp_min(0)
+        / fisher_norm_sq
+    )
+    top_eigenvalue = torch.linalg.eigvalsh(normalized_test_gram)[-1]
+    best_rank1_error = torch.sqrt(
+        (fisher_norm_sq - top_eigenvalue.square()).clamp_min(0) / fisher_norm_sq
+    )
+    tolerance = 1e-8
+    if float(best_rank1_error) > float(direction_oracle_error) + tolerance:
+        raise AssertionError("best held-out rank-1 error exceeds direction-constrained oracle")
+    if float(direction_oracle_error) > float(rank1_error) + tolerance:
+        raise AssertionError("held-out direction oracle exceeds calibration-fitted rank-1")
+    result = {
+        "calibration_examples": calibration_examples,
+        "test_examples": test_examples,
+        "parameter_count": mean.numel(),
+        "mean_gradient_norm": float(torch.sqrt(mu_norm_sq)),
+        "rank1_coefficient": float(coefficient),
+        "rank1_ewc_direction_coefficient": float(coefficient * mu_norm_sq),
+        "diagonal_trace": float(calibration_diagonal.sum()),
+        "test_fisher_frobenius": float(torch.sqrt(fisher_norm_sq)),
+        "rank1_relative_frobenius_error": float(rank1_error),
+        "diagonal_relative_frobenius_error": float(diagonal_error),
+        "heldout_score_log_diag_over_rank1": float(torch.log(diagonal_error / rank1_error)),
+        "heldout_direction_oracle_error": float(direction_oracle_error),
+        "heldout_best_rank1_error": float(best_rank1_error),
+    }
+    if not all(math.isfinite(value) for value in result.values() if isinstance(value, float)):
+        raise ValueError("non-finite full-parameter geometry result")
+    return result
+
+
 def _geometry(calibration: torch.Tensor, test: torch.Tensor) -> dict:
     if calibration.ndim != 2 or test.ndim != 2 or calibration.shape[1] != test.shape[1]:
         raise ValueError("gradient matrices must be 2D with a shared parameter dimension")
@@ -244,29 +402,68 @@ def run(args) -> dict:
         model, train, all_parameters, pad_id, device, args, args.seed + 1000
     )
     learned_moments = _parameter_moments(model)
+    gc.collect()
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
 
     named = dict(model.named_parameters())
     missing = [name for name in PROBES if name not in named]
     if missing:
         raise KeyError(f"missing frozen probes: {missing}")
-    for parameter in model.parameters():
-        parameter.requires_grad_(False)
-    probes = {name: named[name].requires_grad_(True) for name in PROBES}
+    probes = {name: named[name] for name in PROBES}
     probe_state_sha256 = {name: _tensor_sha256(parameter) for name, parameter in probes.items()}
+    full_size, layout = _parameter_layout(model, all_parameters)
+    if full_size != 219_050_496:
+        raise ValueError(f"unexpected full parameter count: {full_size}")
+    probe_layout = {name: layout[name] for name in PROBES}
 
     calibration_seed = args.seed + 2101
     test_seed = args.seed + 4101
-    calibration_gradients, calibration_losses, calibration_masks = _collect_gradients(
-        model, calibration, probes, pad_id, device, calibration_seed, 1e-3, 1.0
+    calibration_first = _full_fisher_pass(
+        model, calibration, all_parameters, full_size, probe_layout,
+        pad_id, device, calibration_seed,
     )
-    test_gradients, test_losses, test_masks = _collect_gradients(
-        model, test, probes, pad_id, device, test_seed, 1e-3, 1.0
+    calibration_mean = calibration_first["gradient_sum"] / len(calibration)
+    calibration_diagonal = calibration_first["diagonal_sum"] / len(calibration)
+    calibration_second = _full_fisher_pass(
+        model, calibration, all_parameters, full_size, probe_layout,
+        pad_id, device, calibration_seed, mean=calibration_mean,
     )
-    geometry = {
-        name: _geometry(calibration_gradients[name], test_gradients[name])
+    repeat_loss_max_abs_difference = max(
+        abs(first - second)
+        for first, second in zip(calibration_first["losses"], calibration_second["losses"])
+    )
+    if repeat_loss_max_abs_difference != 0.0:
+        raise AssertionError("calibration mask replay changed between Fisher passes")
+    test_pass = _full_fisher_pass(
+        model, test, all_parameters, full_size, probe_layout,
+        pad_id, device, test_seed, mean=calibration_mean, retain_vectors=True,
+    )
+    test_diagonal = torch.zeros(full_size, dtype=torch.float64)
+    for vector in test_pass["vectors"]:
+        value64 = vector.double()
+        test_diagonal.addcmul_(value64, value64)
+        del value64
+    test_diagonal.div_(len(test))
+    test_gram = _test_gram(test_pass["vectors"], full_size, args.gram_chunk_size)
+    full_geometry = _geometry_from_sufficient(
+        calibration_mean,
+        calibration_diagonal,
+        calibration_second["projection_square_sum"] / len(calibration),
+        test_diagonal,
+        test_pass["projection_square_sum"] / len(test),
+        test_gram,
+        len(calibration),
+        len(test),
+    )
+    slice_geometry = {
+        name: _geometry(
+            torch.stack(calibration_first["slices"][name]),
+            torch.stack(test_pass["slices"][name]),
+        )
         for name in PROBES
     }
-    scores = [item["heldout_score_log_diag_over_rank1"] for item in geometry.values()]
+    slice_scores = [item["heldout_score_log_diag_over_rank1"] for item in slice_geometry.values()]
     result = {
         "schema_version": 1,
         "status": "ok",
@@ -292,7 +489,8 @@ def run(args) -> dict:
             "calibration_mask_seed": calibration_seed,
             "test_mask_seed": test_seed,
             "prompt_overlap_count": 0,
-            "probes": list(PROBES),
+            "primary_parameter_set": "all_trainable_parameters",
+            "secondary_probes": list(PROBES),
             "seed": args.seed,
         },
         "training_state": {
@@ -305,19 +503,22 @@ def run(args) -> dict:
             "stage": "immediately_after_task_1_training",
             "calibration_examples": len(calibration),
             "test_examples": len(test),
-            "calibration_loss_mean": sum(calibration_losses) / len(calibration_losses),
-            "test_loss_mean": sum(test_losses) / len(test_losses),
-            "calibration_empty_masks": sum(item["masked_tokens"] == 0 for item in calibration_masks),
-            "test_empty_masks": sum(item["masked_tokens"] == 0 for item in test_masks),
-            "calibration_masks": calibration_masks,
-            "test_masks": test_masks,
+            "calibration_loss_mean": sum(calibration_first["losses"]) / len(calibration),
+            "test_loss_mean": sum(test_pass["losses"]) / len(test),
+            "calibration_repeat_loss_max_abs_difference": repeat_loss_max_abs_difference,
+            "calibration_empty_masks": sum(item["masked_tokens"] == 0 for item in calibration_first["masks"]),
+            "test_empty_masks": sum(item["masked_tokens"] == 0 for item in test_pass["masks"]),
+            "calibration_masks": calibration_first["masks"],
+            "test_masks": test_pass["masks"],
         },
-        "geometry": geometry,
+        "full_parameter_geometry": full_geometry,
+        "slice_geometry": slice_geometry,
         "summary": {
-            "mean_score": sum(scores) / len(scores),
-            "rank1_slice_wins": sum(score > 0 for score in scores),
-            "slice_count": len(scores),
-            "scores": scores,
+            "full_parameter_score": full_geometry["heldout_score_log_diag_over_rank1"],
+            "mean_slice_score": sum(slice_scores) / len(slice_scores),
+            "rank1_slice_wins": sum(score > 0 for score in slice_scores),
+            "slice_count": len(slice_scores),
+            "slice_scores": slice_scores,
         },
     }
     if _dependencies() != dependencies:
@@ -393,6 +594,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--seed", type=int, default=3407)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument("--gram-chunk-size", type=int, default=262144)
     parser.add_argument("--self-check", action="store_true")
     args = parser.parse_args()
     if not args.self_check and args.output is None:

@@ -10,8 +10,10 @@ R16's broad geometry audit used packed text and frozen checkpoints, whereas
 its EWC penalty used answer-only gradients after learning a continual task.
 R18 closes that measurement gap at one learned checkpoint: it evaluates the
 same mean-gradient rank-1 and diagonal surrogates on disjoint gradients from
-the actual first R16 continual task.  It is a selected-slice diagnostic, not a
-full-parameter reconstruction claim and not an additional utility experiment.
+the actual first R16 continual task.  The primary endpoint covers every
+trainable parameter used by R16; fixed slices are secondary localization
+diagnostics.  This is a one-task/checkpoint diagnostic, not an additional
+utility experiment.
 
 ## Frozen design
 
@@ -28,19 +30,23 @@ full-parameter reconstruction claim and not an additional utility experiment.
 - Test: all 40 held-out test prompts (10 per fact), one independent mask draw
   per row with seed `seed + 4101`.  Calibration and test prompt strings must
   have empty intersection or the run fails.
-- Parameter slices: `transformer.h.{0,8,17}.norm_1.weight` and
-  `transformer.h.0.attn.proj.weight`.
+- Primary parameter set: all 219,050,496 trainable parameters.  Calibration
+  moments are streamed, calibration projections are obtained in a second
+  identical-mask pass, and the 40 test gradients are retained on CPU only long
+  enough to compute the exact test Gram matrix in parameter chunks.
+- Secondary slices: `transformer.h.{0,8,17}.norm_1.weight` and
+  `transformer.h.0.attn.proj.weight`, extracted from those same full gradients.
 - Optimization/probe seeds: 3407, 3408, 3409.  Seed 3407 is a mechanical
   pilot.  Once it passes the checks below, seeds 3408 and 3409 run unchanged,
   regardless of the sign or size of the pilot result.
 
-For each slice, calibration fits
+For the full parameter set and each secondary slice, calibration fits
 `R_mu = c mu mu^T` and `D = diag(F_cal)`.  Both are scored only against
 `F_test`; the primary score is `s = log(error_D / error_R_mu)`, positive when
-rank-1 has lower held-out relative Frobenius error.  Report every slice and
-seed, the unweighted mean over the four fixed slices, mean/SEM over the three
-seed means, and slice wins.  No significance claim is planned for three
-seeds.
+rank-1 has lower held-out relative Frobenius error.  Report the full-parameter
+score for every seed and its mean/SEM, plus every secondary slice, the
+unweighted slice mean, and slice wins.  No significance claim is planned for
+three seeds.
 
 ## Mandatory checks and stopping rule
 
