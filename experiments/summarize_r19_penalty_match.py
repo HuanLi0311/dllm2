@@ -36,6 +36,10 @@ def _stats(values) -> dict:
     }
 
 
+def _without_timing(values: dict) -> dict:
+    return {key: value for key, value in values.items() if key != "wall_time_seconds"}
+
+
 def summarize(run_root: Path) -> dict:
     contract_path = run_root / "contract.json"
     contract = json.loads(contract_path.read_text())
@@ -84,6 +88,22 @@ def summarize(run_root: Path) -> dict:
         values = [*run["summary"].values(), *run["stages"][1]["training"].values()]
         if not all(not isinstance(value, float) or math.isfinite(value) for value in values):
             raise ValueError(f"non-finite endpoint: {path}")
+
+    for seed in SEEDS:
+        reference = runs[("gd", 1.0, seed)]
+        for method in METHODS:
+            for clip in CLIPS:
+                run = runs[(method, clip, seed)]
+                if _without_timing(run["stages"][0]["training"]) != _without_timing(reference["stages"][0]["training"]):
+                    raise ValueError(f"Task-A training state differs within seed {seed}: {method}/{clip}")
+                if run["stages"][0]["metrics"] != reference["stages"][0]["metrics"]:
+                    raise ValueError(f"Task-A metrics differ within seed {seed}: {method}/{clip}")
+                if run["fisher"] != reference["fisher"]:
+                    raise ValueError(f"Fisher differs within seed {seed}: {method}/{clip}")
+                if run["replay"]["generated_rows_sha256"] != reference["replay"]["generated_rows_sha256"]:
+                    raise ValueError(f"replay cache differs within seed {seed}: {method}/{clip}")
+                if run["stiffness_match"]["matched_lambdas"] != reference["stiffness_match"]["matched_lambdas"]:
+                    raise ValueError(f"matched lambdas differ within seed {seed}: {method}/{clip}")
 
     aggregate = {}
     for clip in CLIPS:
@@ -152,6 +172,7 @@ def summarize(run_root: Path) -> dict:
             "r16_task_a_anchors_verified": True,
             "balanced_replay_verified": True,
             "weighted_trace_equality_verified": True,
+            "within_seed_task_a_fisher_replay_identity_verified": True,
             "all_endpoints_finite": True,
         },
     }
@@ -161,6 +182,7 @@ def _self_check() -> None:
     stats = _stats([-1.0, 0.0, 2.0])
     assert stats["mean"] == 1 / 3 and stats["wins_below_zero"] == 1
     assert _clip_name(1.0) == "1" and _clip_name(1_000_000.0) == "1000000"
+    assert _without_timing({"value": 3, "wall_time_seconds": 4}) == {"value": 3}
     print(json.dumps({"self_check": "ok"}))
 
 
