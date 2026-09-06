@@ -30,7 +30,7 @@ import dllm_rank1_transfer as transfer  # noqa: E402
 METHODS = ("gd", "rank1_gd", "diag_gd")
 SEEDS = (3407, 3408, 3409)
 CLIPS = (1.0, 1_000_000.0)
-DIRECTION_NORM_CHUNK = 1_048_576
+TRACE_CHUNK = 1_048_576
 R16_ANCHORS = {
     3407: {"current_mean": 0.15928860665256275, "clip_fraction": 0.236,
            "rank1_coefficient": 0.0008613997596079841, "diagonal_trace": 0.002578950487077236},
@@ -125,7 +125,7 @@ def _expected_output(config: dict, method: str, clip: float, seed: int) -> Path:
     return ROOT / "runs" / config["run_dir"] / "formal" / name
 
 
-def _direction_norm_sq(direction: torch.Tensor, chunk_size: int = DIRECTION_NORM_CHUNK) -> float:
+def _direction_norm_sq(direction: torch.Tensor, chunk_size: int = TRACE_CHUNK) -> float:
     if direction.ndim != 1 or not direction.is_floating_point() or chunk_size < 1:
         raise ValueError("direction must be a flat floating tensor and chunk_size must be positive")
     flat = direction.detach().cpu()
@@ -139,16 +139,29 @@ def _direction_norm_sq(direction: torch.Tensor, chunk_size: int = DIRECTION_NORM
     return value
 
 
-def _matched_stiffness(alpha: float, diagonal_trace: float, direction_norm_sq: float) -> dict:
-    values = (alpha, diagonal_trace, direction_norm_sq)
+def _tensor_sum_float64(vector: torch.Tensor, chunk_size: int = TRACE_CHUNK) -> float:
+    if vector.ndim != 1 or not vector.is_floating_point() or chunk_size < 1:
+        raise ValueError("vector must be a flat floating tensor and chunk_size must be positive")
+    flat = vector.detach().cpu()
+    partials = []
+    for start in range(0, flat.numel(), chunk_size):
+        partials.append(float(flat[start : start + chunk_size].sum(dtype=torch.float64)))
+    value = math.fsum(partials)
+    if not math.isfinite(value):
+        raise ValueError(f"stored tensor has non-finite float64 sum: {value}")
+    return value
+
+
+def _matched_stiffness(alpha: float, diagonal_trace_exact: float, direction_norm_sq: float) -> dict:
+    values = (alpha, diagonal_trace_exact, direction_norm_sq)
     if not all(math.isfinite(value) and value > 0 for value in values):
         raise ValueError(f"invalid Fisher quantities for trace matching: {values}")
     rank1_trace = alpha * direction_norm_sq
-    target = 1_000.0 * diagonal_trace
+    target = 1_000.0 * diagonal_trace_exact
     lambdas = {"rank1": target / rank1_trace, "diagonal": 1_000.0}
     checks = {
         "rank1": lambdas["rank1"] * alpha * direction_norm_sq,
-        "diagonal": lambdas["diagonal"] * diagonal_trace,
+        "diagonal": lambdas["diagonal"] * diagonal_trace_exact,
     }
     if any(not math.isclose(value, target, rel_tol=1e-12, abs_tol=0.0) for value in checks.values()):
         raise AssertionError(f"corrected weighted-trace matching failed: {checks}")
@@ -156,7 +169,7 @@ def _matched_stiffness(alpha: float, diagonal_trace: float, direction_norm_sq: f
         "direction_norm_sq_float64_chunked": direction_norm_sq,
         "direction_norm_float64_chunked": math.sqrt(direction_norm_sq),
         "rank1_unweighted_trace": rank1_trace,
-        "diagonal_unweighted_trace": diagonal_trace,
+        "diagonal_unweighted_trace": diagonal_trace_exact,
         "weighted_trace_target": target,
         "matched_lambdas": lambdas,
         "weighted_trace_checks": checks,
@@ -279,10 +292,31 @@ def run(args) -> dict:
     if config["r16_anchors"]:
         anchor, anchor_checks = _r16_anchor_checks(args.seed, task_a_training, fisher_stats)
 
-    direction_norm_sq = _direction_norm_sq(fisher["direction"])
+    direction = fisher["direction"]
+    diagonal = fisher["diagonal"]
+    if (
+        direction.numel() != parameter_count or diagonal.numel() != parameter_count
+        or direction.dtype != torch.float32 or diagonal.dtype != torch.float32
+        or direction.device.type != "cpu" or diagonal.device.type != "cpu"
+    ):
+        raise AssertionError("Fisher tensors do not match the frozen float32 CPU representation")
+    direction_norm_sq = _direction_norm_sq(direction)
+    diagonal_trace_exact = _tensor_sum_float64(diagonal)
     stiffness = _matched_stiffness(
-        float(fisher["coefficient"]), float(fisher_stats["diagonal_trace"]), direction_norm_sq
+        float(fisher["coefficient"]), diagonal_trace_exact, direction_norm_sq
     )
+    stiffness.update({
+        "stored_tensor_dtype": "torch.float32",
+        "stored_tensor_device": "cpu",
+        "stored_tensor_numel": parameter_count,
+        "float64_reduction_chunk_elements": TRACE_CHUNK,
+        "float64_reduction_chunks": math.ceil(parameter_count / TRACE_CHUNK),
+        "diagonal_trace_float32_reported": float(fisher_stats["diagonal_trace"]),
+        "diagonal_trace_float64_chunked": diagonal_trace_exact,
+        "diagonal_trace_reported_relative_difference": abs(
+            diagonal_trace_exact - float(fisher_stats["diagonal_trace"])
+        ) / diagonal_trace_exact,
+    })
     prompts, replay_manifest = multitask._replay_prompts(tasks, 1, 64)
     expected_counts = {str(fact): 16 for fact in range(8, 12)}
     if len(replay_manifest) != 1 or replay_manifest[0]["fact_counts"] != expected_counts:
@@ -297,6 +331,7 @@ def run(args) -> dict:
     for parameter in teacher.parameters():
         parameter.requires_grad_(False)
     constraint = None
+    reference = None
     effective_lambda = 0.0
     if args.method != "gd":
         reference = flat_parameters(parameters).detach().clone()
@@ -321,7 +356,7 @@ def run(args) -> dict:
         args.seed + 2000, teacher=teacher, replay_rows=replay,
         constraints=[] if constraint is None else [constraint],
     )
-    del teacher, constraint
+    del teacher, reference, constraint
     if device.type == "cuda":
         torch.cuda.empty_cache()
     final_metrics = {
@@ -365,7 +400,7 @@ def run(args) -> dict:
             "task_a_clip": 1.0, "task_b_clip": args.b_clip,
             "fisher_examples": 40,
             "matching": "lambda_rank1_times_alpha_times_stored_direction_norm_sq_equals_lambda_diagonal_times_trace_diagonal",
-            "direction_norm_reduction": f"float64_cpu_chunks_{DIRECTION_NORM_CHUNK}",
+            "stored_trace_reduction": f"float64_cpu_chunks_{TRACE_CHUNK}",
             "diagonal_anchor_lambda": 1_000.0,
             "replay_fact_counts": replay_manifest[0]["fact_counts"],
         },
@@ -404,11 +439,15 @@ def _self_check() -> None:
     direct_norm_sq = float(direction.double().square().sum())
     chunked_norm_sq = _direction_norm_sq(direction, chunk_size=1)
     assert chunked_norm_sq == direct_norm_sq == 25.0
-    diagonal = torch.tensor([0.5, 1.5], dtype=torch.float64)
-    match = _matched_stiffness(2.5, float(diagonal.sum()), chunked_norm_sq)
+    diagonal = torch.tensor([0.5, 0.125, 1.5, 0.25, 2.0, 0.0625, 0.75], dtype=torch.float32)
+    direct_diagonal_trace = float(diagonal.double().sum())
+    chunked_diagonal_trace = _tensor_sum_float64(diagonal, chunk_size=2)
+    assert chunked_diagonal_trace == direct_diagonal_trace
+    match = _matched_stiffness(2.5, chunked_diagonal_trace, chunked_norm_sq)
     rank1 = match["matched_lambdas"]["rank1"] * 2.5 * torch.outer(direction.double(), direction.double())
-    diag = match["matched_lambdas"]["diagonal"] * torch.diag(diagonal)
-    assert math.isclose(float(torch.trace(rank1)), float(torch.trace(diag)), rel_tol=1e-12)
+    rank1_trace = float(torch.trace(rank1))
+    diagonal_trace = match["matched_lambdas"]["diagonal"] * direct_diagonal_trace
+    assert math.isclose(rank1_trace, diagonal_trace, rel_tol=1e-12)
     assert math.isclose(match["weighted_trace_checks"]["rank1"], match["weighted_trace_target"], rel_tol=1e-12)
     assert multitask._sft_losses is transfer._sft_losses
     mock = [{"name": "a", "train_raw": [
