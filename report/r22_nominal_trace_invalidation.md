@@ -12,3 +12,7 @@ before any JSON result.  The unchanged retry may finish.  The failed log has
 SHA256 `8881db003ae3d614a1a1c031d9d0a8c15049a437662472e9d5761c8840b878f3`.
 
 R24 is the independent corrected-trace replacement for the 1.14B grid.
+
+The permitted seed-3407 subset completed with three status-`ok` JSON files;
+the unchanged `gd` retry exited 0.  These files remain quarantined with R22
+and are not combined with R24 or reported as trace-matched evidence.
