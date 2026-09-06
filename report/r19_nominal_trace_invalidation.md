@@ -10,11 +10,17 @@ length: R18 seed 3407 independently measured `||u32|| =
 1.029617536421548`, so the implemented rank-1 trace was
 `lambda_R * alpha * ||u32||^2`, about 6.011% above the registered target.
 This is a mechanical mismatch, irrespective of the observed endpoints.
+The old diagonal target also used a single long float32 `D32.sum()` rather
+than the mathematical trace of the stored tensor.  That reduction error is
+much smaller, but it is still incompatible with an exact implemented-trace
+claim.
 
 The corrected controls are assigned new run families R23 (219M) and R24
-(1.14B).  They compute `||u32||^2` by a chunked float64 reduction of the
-stored direction and set
-`lambda_R = 1000 * trace(D) / (alpha * ||u32||^2)`.
+(1.14B).  They compute both `||u32||^2` and `trace(D32)` by fixed-chunk
+float64 reductions of the stored tensors and set
+`lambda_R = 1000 * trace(D32) / (alpha * ||u32||^2)`; the original float32
+diagonal statistic is retained only for the R16 anchor and its discrepancy
+is recorded.
 
 ## Stop and failure ledger
 
