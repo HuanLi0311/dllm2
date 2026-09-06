@@ -1,0 +1,7 @@
+# Exact environment used for the exploratory Qwen3 extension.
+--extra-index-url https://download.pytorch.org/whl/cu128
+
+torch==2.7.0
+numpy==1.26.0
+safetensors==0.8.0
+transformers==4.57.6

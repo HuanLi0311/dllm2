@@ -1,0 +1,1516 @@
+{
+  "schema_version": 4,
+  "status": "ok",
+  "probes": [
+    {
+      "path": "agent_skills/skill-benchmark/scripts/dllm_rank1_probe.py",
+      "sha256": "a3c08f89ea6dc6190686ae11175cc03c23cd59f97a67a13f2b72c66f5c39a84d"
+    },
+    {
+      "path": "experiments/run_audited_geometry_probe.py",
+      "sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2"
+    }
+  ],
+  "geometry_artifacts": [
+    {
+      "path": "runs/r08_split_primary/gsm_170_s0/benchmark.json",
+      "sha256": "b68010daa95287394dcf26660bc688620a79f23c04fd4efce9afb688716d8925",
+      "command": [
+        "python",
+        "agent_skills/skill-benchmark/scripts/dllm_rank1_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/gsm8k_tasks.jsonl",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "32,64,128",
+        "--test-samples",
+        "128",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "--shuffle-records",
+        "--loss-mode",
+        "native_conditional",
+        "--seed",
+        "0",
+        "--device",
+        "cuda",
+        "--output",
+        "runs/r08_split_primary/gsm_170_s0/benchmark.json"
+      ],
+      "probe_sha256": "a3c08f89ea6dc6190686ae11175cc03c23cd59f97a67a13f2b72c66f5c39a84d"
+    },
+    {
+      "path": "runs/r08_split_primary/gsm_170_s1/benchmark.json",
+      "sha256": "cf08765ee9d26fe6febfc3a77738f5f04d95e29411d2cbad9e3bb5900ea44e07",
+      "command": [
+        "python",
+        "agent_skills/skill-benchmark/scripts/dllm_rank1_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/gsm8k_tasks.jsonl",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "32,64,128",
+        "--test-samples",
+        "128",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "--shuffle-records",
+        "--loss-mode",
+        "native_conditional",
+        "--seed",
+        "1",
+        "--device",
+        "cuda",
+        "--output",
+        "runs/r08_split_primary/gsm_170_s1/benchmark.json"
+      ],
+      "probe_sha256": "a3c08f89ea6dc6190686ae11175cc03c23cd59f97a67a13f2b72c66f5c39a84d"
+    },
+    {
+      "path": "runs/r08_split_primary/gsm_170_s2/benchmark.json",
+      "sha256": "d25d7d2a71efc93b118950f8ecc57f6497520e80899f599dc6275c440af1d3c6",
+      "command": [
+        "python",
+        "agent_skills/skill-benchmark/scripts/dllm_rank1_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/gsm8k_tasks.jsonl",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "32,64,128",
+        "--test-samples",
+        "128",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "--shuffle-records",
+        "--loss-mode",
+        "native_conditional",
+        "--seed",
+        "2",
+        "--device",
+        "cuda",
+        "--output",
+        "runs/r08_split_primary/gsm_170_s2/benchmark.json"
+      ],
+      "probe_sha256": "a3c08f89ea6dc6190686ae11175cc03c23cd59f97a67a13f2b72c66f5c39a84d"
+    },
+    {
+      "path": "runs/r08_split_primary/gsm_170_s3/benchmark.json",
+      "sha256": "7ad169bcafb3ab98570f1764072bef0f5fd7b52e310eea138385863984d96292",
+      "command": [
+        "python",
+        "agent_skills/skill-benchmark/scripts/dllm_rank1_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/gsm8k_tasks.jsonl",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "32,64,128",
+        "--test-samples",
+        "128",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "--shuffle-records",
+        "--loss-mode",
+        "native_conditional",
+        "--seed",
+        "3",
+        "--device",
+        "cuda",
+        "--output",
+        "runs/r08_split_primary/gsm_170_s3/benchmark.json"
+      ],
+      "probe_sha256": "a3c08f89ea6dc6190686ae11175cc03c23cd59f97a67a13f2b72c66f5c39a84d"
+    },
+    {
+      "path": "runs/r08_split_primary/gsm_170_s4/benchmark.json",
+      "sha256": "ae4778e4db250219a4396e3e752356f944aa67126545436ab22d12c253b6164f",
+      "command": [
+        "python",
+        "agent_skills/skill-benchmark/scripts/dllm_rank1_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/gsm8k_tasks.jsonl",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "32,64,128",
+        "--test-samples",
+        "128",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "--shuffle-records",
+        "--loss-mode",
+        "native_conditional",
+        "--seed",
+        "4",
+        "--device",
+        "cuda",
+        "--output",
+        "runs/r08_split_primary/gsm_170_s4/benchmark.json"
+      ],
+      "probe_sha256": "a3c08f89ea6dc6190686ae11175cc03c23cd59f97a67a13f2b72c66f5c39a84d"
+    },
+    {
+      "path": "runs/r08_split_primary/gsm_1028_s0/benchmark.json",
+      "sha256": "a9d651eb1fa4886699c00e362c410d4cecdbb7984015224adabb6992aa5bcb10",
+      "command": [
+        "python",
+        "agent_skills/skill-benchmark/scripts/dllm_rank1_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-1028M-1600e18.safetensors",
+        "--model-size",
+        "1028",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/gsm8k_tasks.jsonl",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "16,32,64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.9.norm_1.weight,transformer.h.19.norm_1.weight",
+        "--shuffle-records",
+        "--loss-mode",
+        "native_conditional",
+        "--seed",
+        "0",
+        "--device",
+        "cuda",
+        "--output",
+        "runs/r08_split_primary/gsm_1028_s0/benchmark.json"
+      ],
+      "probe_sha256": "a3c08f89ea6dc6190686ae11175cc03c23cd59f97a67a13f2b72c66f5c39a84d"
+    },
+    {
+      "path": "runs/r08_split_primary/gsm_1028_s1/benchmark.json",
+      "sha256": "af130ae3cfad971bf7fffd85ba7f8e82c5ff3331b2e180f20c49e57ceda9f5cd",
+      "command": [
+        "python",
+        "agent_skills/skill-benchmark/scripts/dllm_rank1_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-1028M-1600e18.safetensors",
+        "--model-size",
+        "1028",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/gsm8k_tasks.jsonl",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "16,32,64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.9.norm_1.weight,transformer.h.19.norm_1.weight",
+        "--shuffle-records",
+        "--loss-mode",
+        "native_conditional",
+        "--seed",
+        "1",
+        "--device",
+        "cuda",
+        "--output",
+        "runs/r08_split_primary/gsm_1028_s1/benchmark.json"
+      ],
+      "probe_sha256": "a3c08f89ea6dc6190686ae11175cc03c23cd59f97a67a13f2b72c66f5c39a84d"
+    },
+    {
+      "path": "runs/r08_split_primary/gsm_1028_s2/benchmark.json",
+      "sha256": "0515e53ad4835131f75f9f3d675c890c25bb79f5e0806f001a9fe0de86ca255d",
+      "command": [
+        "python",
+        "agent_skills/skill-benchmark/scripts/dllm_rank1_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-1028M-1600e18.safetensors",
+        "--model-size",
+        "1028",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/gsm8k_tasks.jsonl",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "16,32,64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.9.norm_1.weight,transformer.h.19.norm_1.weight",
+        "--shuffle-records",
+        "--loss-mode",
+        "native_conditional",
+        "--seed",
+        "2",
+        "--device",
+        "cuda",
+        "--output",
+        "runs/r08_split_primary/gsm_1028_s2/benchmark.json"
+      ],
+      "probe_sha256": "a3c08f89ea6dc6190686ae11175cc03c23cd59f97a67a13f2b72c66f5c39a84d"
+    },
+    {
+      "path": "runs/r12_audited_controls/gsm_all_170_s0/benchmark.json",
+      "sha256": "b09d600b71fa61819ab2ca8d12d64a020f83c547546a33545b64f9e0f905e053",
+      "command": [
+        "python",
+        "experiments/run_audited_geometry_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/gsm8k_tasks.jsonl",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "--shuffle-records",
+        "--seed",
+        "0",
+        "--device",
+        "cuda",
+        "--loss-mode",
+        "native_conditional",
+        "--output",
+        "runs/r12_audited_controls/gsm_all_170_s0/benchmark.json"
+      ],
+      "probe_sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2"
+    },
+    {
+      "path": "runs/r12_audited_controls/gsm_all_170_s1/benchmark.json",
+      "sha256": "b6a95e70cc7d817958c40242cbacf337260a3fa6a22e6259b1af6c9d2fdb99e9",
+      "command": [
+        "python",
+        "experiments/run_audited_geometry_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/gsm8k_tasks.jsonl",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "--shuffle-records",
+        "--seed",
+        "1",
+        "--device",
+        "cuda",
+        "--loss-mode",
+        "native_conditional",
+        "--output",
+        "runs/r12_audited_controls/gsm_all_170_s1/benchmark.json"
+      ],
+      "probe_sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2"
+    },
+    {
+      "path": "runs/r12_audited_controls/gsm_all_170_s2/benchmark.json",
+      "sha256": "aaddb2a18d20ffaae9e94771b34d7ce9d110bb43b70b981554b2aed50deeaaeb",
+      "command": [
+        "python",
+        "experiments/run_audited_geometry_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/gsm8k_tasks.jsonl",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "--shuffle-records",
+        "--seed",
+        "2",
+        "--device",
+        "cuda",
+        "--loss-mode",
+        "native_conditional",
+        "--output",
+        "runs/r12_audited_controls/gsm_all_170_s2/benchmark.json"
+      ],
+      "probe_sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2"
+    },
+    {
+      "path": "runs/r12_audited_controls/gsm_one_170_s0/benchmark.json",
+      "sha256": "fcbcaa8f54fa0eacdf47318469bfe1b49cc34584db1e58a56f12cf2c9de07828",
+      "command": [
+        "python",
+        "experiments/run_audited_geometry_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/gsm8k_tasks.jsonl",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "--shuffle-records",
+        "--seed",
+        "0",
+        "--device",
+        "cuda",
+        "--loss-mode",
+        "fixed_target",
+        "--output",
+        "runs/r12_audited_controls/gsm_one_170_s0/benchmark.json"
+      ],
+      "probe_sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2"
+    },
+    {
+      "path": "runs/r12_audited_controls/gsm_one_170_s1_retry/benchmark.json",
+      "sha256": "dcfce5d297655ffe524893e768ad7e8ecf7fda75da49434e3222201928c0615b",
+      "command": [
+        "python",
+        "experiments/run_audited_geometry_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/gsm8k_tasks.jsonl",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "--shuffle-records",
+        "--seed",
+        "1",
+        "--device",
+        "cuda",
+        "--loss-mode",
+        "fixed_target",
+        "--output",
+        "runs/r12_audited_controls/gsm_one_170_s1_retry/benchmark.json"
+      ],
+      "probe_sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2"
+    },
+    {
+      "path": "runs/r12_audited_controls/gsm_one_170_s2/benchmark.json",
+      "sha256": "b8d3f3dab49719d50af5c8976a1a6c1287d425e10382f7584983e882faadbe8a",
+      "command": [
+        "python",
+        "experiments/run_audited_geometry_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/gsm8k_tasks.jsonl",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "--shuffle-records",
+        "--seed",
+        "2",
+        "--device",
+        "cuda",
+        "--loss-mode",
+        "fixed_target",
+        "--output",
+        "runs/r12_audited_controls/gsm_one_170_s2/benchmark.json"
+      ],
+      "probe_sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2"
+    },
+    {
+      "path": "runs/r12_audited_controls/mt_170_s0/benchmark.json",
+      "sha256": "16afacb1f764366b560228a5c820d6a318cd24521576898b368a2b46ea283828",
+      "command": [
+        "python",
+        "experiments/run_audited_geometry_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/geometry_corpora.jsonl",
+        "--task-id",
+        "0",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "--shuffle-records",
+        "--seed",
+        "0",
+        "--device",
+        "cuda",
+        "--loss-mode",
+        "native_conditional",
+        "--output",
+        "runs/r12_audited_controls/mt_170_s0/benchmark.json"
+      ],
+      "probe_sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2"
+    },
+    {
+      "path": "runs/r12_audited_controls/mt_170_s1/benchmark.json",
+      "sha256": "4019c911196f42962fe8be74ffcbc2f421d152df67c17f7422fd42a6cdb5fc1d",
+      "command": [
+        "python",
+        "experiments/run_audited_geometry_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/geometry_corpora.jsonl",
+        "--task-id",
+        "0",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "--shuffle-records",
+        "--seed",
+        "1",
+        "--device",
+        "cuda",
+        "--loss-mode",
+        "native_conditional",
+        "--output",
+        "runs/r12_audited_controls/mt_170_s1/benchmark.json"
+      ],
+      "probe_sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2"
+    },
+    {
+      "path": "runs/r12_audited_controls/mt_170_s2/benchmark.json",
+      "sha256": "a4b91acc503b9a10f72025ba8fe3fa28ec0902df3099e3358f12c751c5f2fd74",
+      "command": [
+        "python",
+        "experiments/run_audited_geometry_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/geometry_corpora.jsonl",
+        "--task-id",
+        "0",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "--shuffle-records",
+        "--seed",
+        "2",
+        "--device",
+        "cuda",
+        "--loss-mode",
+        "native_conditional",
+        "--output",
+        "runs/r12_audited_controls/mt_170_s2/benchmark.json"
+      ],
+      "probe_sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2"
+    },
+    {
+      "path": "runs/r12_audited_controls/reversal_170_s0/benchmark.json",
+      "sha256": "d65f0daad62aa8b727f88373f97eecfde84cbe8e06c8611ea7df75d9545d7512",
+      "command": [
+        "python",
+        "experiments/run_audited_geometry_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/geometry_corpora.jsonl",
+        "--task-id",
+        "1",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "--shuffle-records",
+        "--seed",
+        "0",
+        "--device",
+        "cuda",
+        "--loss-mode",
+        "native_conditional",
+        "--output",
+        "runs/r12_audited_controls/reversal_170_s0/benchmark.json"
+      ],
+      "probe_sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2"
+    },
+    {
+      "path": "runs/r12_audited_controls/reversal_170_s1/benchmark.json",
+      "sha256": "0a15451ddd800cc387e2def09a369d4ec57f5ccb8665ab4ce3a88983b2429732",
+      "command": [
+        "python",
+        "experiments/run_audited_geometry_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/geometry_corpora.jsonl",
+        "--task-id",
+        "1",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "--shuffle-records",
+        "--seed",
+        "1",
+        "--device",
+        "cuda",
+        "--loss-mode",
+        "native_conditional",
+        "--output",
+        "runs/r12_audited_controls/reversal_170_s1/benchmark.json"
+      ],
+      "probe_sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2"
+    },
+    {
+      "path": "runs/r12_audited_controls/reversal_170_s2/benchmark.json",
+      "sha256": "b7de37a3cb9e6c1d28f4fe3f81fe94d698587015eac153ebc83256333c33cd2f",
+      "command": [
+        "python",
+        "experiments/run_audited_geometry_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/geometry_corpora.jsonl",
+        "--task-id",
+        "1",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.3,0.5,0.7,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "--shuffle-records",
+        "--seed",
+        "2",
+        "--device",
+        "cuda",
+        "--loss-mode",
+        "native_conditional",
+        "--output",
+        "runs/r12_audited_controls/reversal_170_s2/benchmark.json"
+      ],
+      "probe_sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2"
+    },
+    {
+      "path": "runs/r10_attention_split/gsm_170_attn_s0_retry/benchmark.json",
+      "sha256": "de97e1acfc831f08f9cf463f90aa1330f3c020059750ea49bafcb4c2c3a8c0bd",
+      "command": [
+        "python",
+        "agent_skills/skill-benchmark/scripts/dllm_rank1_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/gsm8k_tasks.jsonl",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.5,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.attn.proj.weight",
+        "--shuffle-records",
+        "--loss-mode",
+        "native_conditional",
+        "--seed",
+        "0",
+        "--device",
+        "cuda",
+        "--output",
+        "runs/r10_attention_split/gsm_170_attn_s0_retry/benchmark.json"
+      ],
+      "probe_sha256": "a3c08f89ea6dc6190686ae11175cc03c23cd59f97a67a13f2b72c66f5c39a84d"
+    },
+    {
+      "path": "runs/r10_attention_split/gsm_170_attn_s1/benchmark.json",
+      "sha256": "b1dd31af3fc53f5d2dae49443343dfde92cc354d24631b4b2f7903345acba845",
+      "command": [
+        "python",
+        "agent_skills/skill-benchmark/scripts/dllm_rank1_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/gsm8k_tasks.jsonl",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.5,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.attn.proj.weight",
+        "--shuffle-records",
+        "--loss-mode",
+        "native_conditional",
+        "--seed",
+        "1",
+        "--device",
+        "cuda",
+        "--output",
+        "runs/r10_attention_split/gsm_170_attn_s1/benchmark.json"
+      ],
+      "probe_sha256": "a3c08f89ea6dc6190686ae11175cc03c23cd59f97a67a13f2b72c66f5c39a84d"
+    },
+    {
+      "path": "runs/r10_attention_split/gsm_170_attn_s2/benchmark.json",
+      "sha256": "7a79d1068969003f49125b12569021b009c65646bedf3b4a1d770cb9472e2bee",
+      "command": [
+        "python",
+        "agent_skills/skill-benchmark/scripts/dllm_rank1_probe.py",
+        "--checkpoint",
+        "checkpoints/mdm_safetensors/mdm-170M-100e18.safetensors",
+        "--model-size",
+        "170",
+        "--code-root",
+        "external/SMDM",
+        "--data",
+        "runs/data/gsm8k_tasks.jsonl",
+        "--split",
+        "eval",
+        "--mask-probabilities",
+        "0.1,0.5,0.9",
+        "--include-native-schedule",
+        "--sample-sizes",
+        "64",
+        "--test-samples",
+        "64",
+        "--sequence-length",
+        "64",
+        "--parameter",
+        "transformer.h.0.attn.proj.weight",
+        "--shuffle-records",
+        "--loss-mode",
+        "native_conditional",
+        "--seed",
+        "2",
+        "--device",
+        "cuda",
+        "--output",
+        "runs/r10_attention_split/gsm_170_attn_s2/benchmark.json"
+      ],
+      "probe_sha256": "a3c08f89ea6dc6190686ae11175cc03c23cd59f97a67a13f2b72c66f5c39a84d"
+    }
+  ],
+  "matched_groups": [
+    {
+      "checkpoint_sha256": "2d8c9b9a730715f2c772d5bc740e12951fc160e5e8511a16835f3537401ea9bb",
+      "data_sha256": "a191018cd0cbe45b66f6bbb19d5ee1d6f932e56cb272133778d67a91eb0e0b99",
+      "task_id": null,
+      "loss_mode": "native_conditional",
+      "probe_sha256": "a3c08f89ea6dc6190686ae11175cc03c23cd59f97a67a13f2b72c66f5c39a84d",
+      "critical_config": {
+        "mask_probabilities": "0.1,0.3,0.5,0.7,0.9",
+        "sample_sizes": "32,64,128",
+        "test_samples": 128,
+        "sequence_length": 64,
+        "parameter": "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "shuffle_records": true,
+        "loss_mode": "native_conditional",
+        "include_native_schedule": true,
+        "native_eps": 0.001
+      },
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "checkpoint_sha256": "ce96ce67a051613b6d7feb419c99c0b4db5bfcfaaa0833ed7f7ecbc6632841d6",
+      "data_sha256": "a191018cd0cbe45b66f6bbb19d5ee1d6f932e56cb272133778d67a91eb0e0b99",
+      "task_id": null,
+      "loss_mode": "native_conditional",
+      "probe_sha256": "a3c08f89ea6dc6190686ae11175cc03c23cd59f97a67a13f2b72c66f5c39a84d",
+      "critical_config": {
+        "mask_probabilities": "0.1,0.3,0.5,0.7,0.9",
+        "sample_sizes": "16,32,64",
+        "test_samples": 64,
+        "sequence_length": 64,
+        "parameter": "transformer.h.0.norm_1.weight,transformer.h.9.norm_1.weight,transformer.h.19.norm_1.weight",
+        "shuffle_records": true,
+        "loss_mode": "native_conditional",
+        "include_native_schedule": true,
+        "native_eps": 0.001
+      },
+      "seeds": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "checkpoint_sha256": "2d8c9b9a730715f2c772d5bc740e12951fc160e5e8511a16835f3537401ea9bb",
+      "data_sha256": "a191018cd0cbe45b66f6bbb19d5ee1d6f932e56cb272133778d67a91eb0e0b99",
+      "task_id": null,
+      "loss_mode": "native_conditional",
+      "probe_sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2",
+      "critical_config": {
+        "mask_probabilities": "0.1,0.3,0.5,0.7,0.9",
+        "sample_sizes": "64",
+        "test_samples": 64,
+        "sequence_length": 64,
+        "parameter": "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "shuffle_records": true,
+        "loss_mode": "native_conditional",
+        "include_native_schedule": true,
+        "native_eps": 0.001
+      },
+      "seeds": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "checkpoint_sha256": "2d8c9b9a730715f2c772d5bc740e12951fc160e5e8511a16835f3537401ea9bb",
+      "data_sha256": "a191018cd0cbe45b66f6bbb19d5ee1d6f932e56cb272133778d67a91eb0e0b99",
+      "task_id": null,
+      "loss_mode": "fixed_target",
+      "probe_sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2",
+      "critical_config": {
+        "mask_probabilities": "0.1,0.3,0.5,0.7,0.9",
+        "sample_sizes": "64",
+        "test_samples": 64,
+        "sequence_length": 64,
+        "parameter": "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "shuffle_records": true,
+        "loss_mode": "fixed_target",
+        "include_native_schedule": true,
+        "native_eps": 0.001
+      },
+      "seeds": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "checkpoint_sha256": "2d8c9b9a730715f2c772d5bc740e12951fc160e5e8511a16835f3537401ea9bb",
+      "data_sha256": "918f497538950ecfe143a0b000746292379ea1f143d359c3915fd9bb4a4ebeb5",
+      "task_id": 0,
+      "loss_mode": "native_conditional",
+      "probe_sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2",
+      "critical_config": {
+        "mask_probabilities": "0.1,0.3,0.5,0.7,0.9",
+        "sample_sizes": "64",
+        "test_samples": 64,
+        "sequence_length": 64,
+        "parameter": "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "shuffle_records": true,
+        "loss_mode": "native_conditional",
+        "include_native_schedule": true,
+        "native_eps": 0.001
+      },
+      "seeds": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "checkpoint_sha256": "2d8c9b9a730715f2c772d5bc740e12951fc160e5e8511a16835f3537401ea9bb",
+      "data_sha256": "918f497538950ecfe143a0b000746292379ea1f143d359c3915fd9bb4a4ebeb5",
+      "task_id": 1,
+      "loss_mode": "native_conditional",
+      "probe_sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2",
+      "critical_config": {
+        "mask_probabilities": "0.1,0.3,0.5,0.7,0.9",
+        "sample_sizes": "64",
+        "test_samples": 64,
+        "sequence_length": 64,
+        "parameter": "transformer.h.0.norm_1.weight,transformer.h.8.norm_1.weight,transformer.h.17.norm_1.weight",
+        "shuffle_records": true,
+        "loss_mode": "native_conditional",
+        "include_native_schedule": true,
+        "native_eps": 0.001
+      },
+      "seeds": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "checkpoint_sha256": "2d8c9b9a730715f2c772d5bc740e12951fc160e5e8511a16835f3537401ea9bb",
+      "data_sha256": "a191018cd0cbe45b66f6bbb19d5ee1d6f932e56cb272133778d67a91eb0e0b99",
+      "task_id": null,
+      "loss_mode": "native_conditional",
+      "probe_sha256": "a3c08f89ea6dc6190686ae11175cc03c23cd59f97a67a13f2b72c66f5c39a84d",
+      "critical_config": {
+        "mask_probabilities": "0.1,0.5,0.9",
+        "sample_sizes": "64",
+        "test_samples": 64,
+        "sequence_length": 64,
+        "parameter": "transformer.h.0.attn.proj.weight",
+        "shuffle_records": true,
+        "loss_mode": "native_conditional",
+        "include_native_schedule": true,
+        "native_eps": 0.001
+      },
+      "seeds": [
+        0,
+        1,
+        2
+      ]
+    }
+  ],
+  "comparison_contract": {
+    "path": "runs/r12_audited_controls/comparison_contract.json",
+    "sha256": "6146c78b14ed8802028075505cd7c0c1b4950c47782dd41ffd7bfe6a425dbfb9",
+    "verified": [
+      "identical calibration/test sizes and grids",
+      "identical objective-pair record identities and corrupted masks",
+      "identical corpus-control mask protocol",
+      "expected task IDs and loss modes for every comparison group",
+      "identical audited-wrapper and frozen base-probe hashes",
+      "rank-1 and diagonal errors recomputed from stored sufficient statistics"
+    ]
+  },
+  "execution_backend_audit": {
+    "path": "runs/backend_replay/backend_audit.json",
+    "sha256": "26eba7ca5d2b101b28b4fa2e36f51c39c63b7eb0d23591c202fccd0a99a7a96c",
+    "resolved_backends": {
+      "flash_attn": {
+        "importable": false,
+        "version": null,
+        "resolved_source_branch": "torch.nn.functional.scaled_dot_product_attention"
+      },
+      "xformers": {
+        "importable": true,
+        "version": "0.0.28.post1",
+        "resolved_swiglu_class": "xformers.ops.swiglu_op.SwiGLU"
+      },
+      "dropout_layer_norm": {
+        "importable": false,
+        "version": null,
+        "resolved_rmsnorm_branch": "lit_gpt.rmsnorm.rms_norm pure-PyTorch fallback"
+      },
+      "xentropy_cuda_lib": {
+        "importable": false,
+        "version": null,
+        "resolved_probe_loss": "torch.nn.functional.cross_entropy",
+        "fused_extension_used_by_probe": false
+      },
+      "rotary_embedding": {
+        "resolved_source_branch": "lit_gpt.compat.apply_rotary_emb_func pure-PyTorch implementation"
+      },
+      "torch_sdpa_policy": {
+        "flash_enabled": true,
+        "memory_efficient_enabled": true,
+        "math_enabled": true
+      }
+    },
+    "verified": [
+      "all submitted envelopes record the exact audit interpreter and one software/source environment",
+      "all model-relevant optional backend packages, resolved branches, and the complete installed distribution lock are captured",
+      "the branch-defining diffmodel.py and compat.py sources are hashed",
+      "both checkpoint scales exactly reproduce all 32 common fields of a selected fixed-p result row",
+      "replay host, frozen probe, matched configuration, and minimal RNG-preserving result grids are enforced"
+    ]
+  },
+  "repositories": [
+    {
+      "path": "external/SMDM",
+      "commit": "513c351e780051f501137fe36e06837fe29ac1f8",
+      "repository_tree": "66d4d4e70351cee2dcb75191c1aeeca6b2a94c18",
+      "source_subtree_tree": "79e81a87441a6333be677a247944d654ce00302c",
+      "repository_dirty": true,
+      "code_subtree_dirty": false,
+      "source_closure_definition": "LICENSE, README.md, pretrain/train_mdm.py, and every tracked file below lit_gpt/",
+      "source_closure": [
+        {
+          "path": "LICENSE",
+          "sha256": "ab89ceca19ca531005699095ca542f982fac92efd82f954f49ac17aa99a37cda"
+        },
+        {
+          "path": "README.md",
+          "sha256": "daee302458d3b5b2a921c571b9c98044d1ac06dfab3e15c97b2b79016cef8a00"
+        },
+        {
+          "path": "lit_gpt/__init__.py",
+          "sha256": "a176a5eae574ba2470082dd192310b844149d72047ef63089cbdac7c65332c95"
+        },
+        {
+          "path": "lit_gpt/adapter.py",
+          "sha256": "212c5e3f5a6c9cca524fe9d7cf15e28917fd8bd268b443fe59efa6a2e9019fad"
+        },
+        {
+          "path": "lit_gpt/adapter_v2.py",
+          "sha256": "b241617f8d8f80181bc2cf5f6ad9a7f612b60d71b0240d66390cafd129693e7d"
+        },
+        {
+          "path": "lit_gpt/compat.py",
+          "sha256": "4d663d80fa026de25605bfbf5233c9c1f0c6e8e1fc348a4e056be5211f8c4152"
+        },
+        {
+          "path": "lit_gpt/config.py",
+          "sha256": "d05793e737d8c36ed3057c4a8cfd2934d8c3851c3465a294d72366d91b50dc9b"
+        },
+        {
+          "path": "lit_gpt/diffmodel.py",
+          "sha256": "b58d60672d641a64c74063cf5742c8b51ee59e703713a539b5c06c273c31b077"
+        },
+        {
+          "path": "lit_gpt/fused_cross_entropy.py",
+          "sha256": "e27ef100df3b60672aaf78a2f412a07578656532547b85607164765fefd16b17"
+        },
+        {
+          "path": "lit_gpt/fused_rotary_embedding.py",
+          "sha256": "88836ab848c4a07fe4704a14807b2152b8fccd2101df7eacd1feab62b55c4ffb"
+        },
+        {
+          "path": "lit_gpt/lora.py",
+          "sha256": "2a3b3115a6f061cbbad0a7392a0adf722c4a21828e1ad8c0530b47a7a64d89b8"
+        },
+        {
+          "path": "lit_gpt/model.py",
+          "sha256": "370d566fa40c265c59b9d0d3bcbf6ac67e53db59746a82dd5c4abce0973dfa6c"
+        },
+        {
+          "path": "lit_gpt/model_cache.py",
+          "sha256": "c08852da0bf42b37a334b1c34015442733595f53ca421338d2bef3354faa3f10"
+        },
+        {
+          "path": "lit_gpt/packed_dataset.py",
+          "sha256": "821e0665ad54b28b13317061328229df45c1330c923558d8c80230bdd0bdd811"
+        },
+        {
+          "path": "lit_gpt/rmsnorm.py",
+          "sha256": "96868da292ac473a79a9df495508cf6183d6eca23b52a2bf4c2d470e55372e10"
+        },
+        {
+          "path": "lit_gpt/speed_monitor.py",
+          "sha256": "7c71b963c834e434b8a3100507519d08ce552c7ff48672f0f51235c203a883e6"
+        },
+        {
+          "path": "lit_gpt/tokenizer.py",
+          "sha256": "5a69922c2a0434bc02d067bd35bb7bf1d63baaf5afb7ca2063dcbf3bf875010e"
+        },
+        {
+          "path": "lit_gpt/utils.py",
+          "sha256": "1cc148d768f669e6e01fba2a4a5d030fcb23cbde3f97f29b2d6d527f9caab5f7"
+        },
+        {
+          "path": "pretrain/train_mdm.py",
+          "sha256": "aa9eecc3302e48fb720ceefa61f703289b201fa451a0a1256655d6206f2ef7f4"
+        }
+      ],
+      "source_archive": {
+        "path": "paper/review_bundle/source/SMDM-513c351e7800.tar.gz",
+        "sha256": "dd9ff5033a4e306eb4ec0950b2ef8e04dcbcd452caecee0b1763159174205811",
+        "prefix": "SMDM/",
+        "regular_files": 19,
+        "verified_against_closure": true
+      }
+    }
+  ],
+  "experiment_software": [
+    {
+      "python": "3.9.25 (main, Nov  3 2025, 22:33:05) \n[GCC 11.2.0]",
+      "torch": "2.4.1+cu121",
+      "cuda": "12.1",
+      "device": "NVIDIA A100-PCIE-40GB"
+    }
+  ],
+  "manifest_environment": {
+    "python": "3.9.25 (main, Nov  3 2025, 22:33:05) \n[GCC 11.2.0]",
+    "packages": {
+      "torch": "2.4.1",
+      "safetensors": "0.4.5",
+      "transformers": "4.31.0",
+      "lightning": "2.1.2",
+      "lightning-utilities": "0.11.8",
+      "typing-extensions": "4.16.0",
+      "einops": "0.6.1",
+      "numpy": "2.0.2",
+      "matplotlib": "3.9.4",
+      "xformers": "0.0.28.post1",
+      "flash-attn": null,
+      "dropout-layer-norm": null,
+      "xentropy-cuda-lib": null
+    }
+  },
+  "extra_artifacts": [
+    {
+      "path": "runs/r08_split_primary/isotropic_null_full.json",
+      "sha256": "59abf418a1d5936a4212e01378f47d937fb39abddaf835e887b8e0e64c826e05"
+    },
+    {
+      "path": "runs/r12_audited_controls/comparison_contract.json",
+      "sha256": "6146c78b14ed8802028075505cd7c0c1b4950c47782dd41ffd7bfe6a425dbfb9"
+    },
+    {
+      "path": "paper/figures/figure_data.json",
+      "sha256": "9b9b5a873670f1a91b3155d79f27dca5b5ca09806161f9e4cdbf831415ded8b2"
+    },
+    {
+      "path": "paper/figures/corpus_heatmaps.pdf",
+      "sha256": "30e4ef41d883aed99f088095799cf8b369834d32f913b1312316ff6f56a29c09"
+    },
+    {
+      "path": "paper/figures/dense_slice_control.pdf",
+      "sha256": "f190cc9a2c5d007b617f5d7a2fa3ce3e054c1d6c5ed960786181d02d2e226466"
+    },
+    {
+      "path": "paper/figures/finite_sample_null.pdf",
+      "sha256": "78934d7d0e9eb78ea2f7a7005851060ed81b605a5e1bc2ed3e5ad30cd49c76e8"
+    },
+    {
+      "path": "paper/figures/gaussian_counterexample.pdf",
+      "sha256": "e86eb47a9f8e57d53a76ed1f376a11398c4dc1875802288990628a60d7db9f5f"
+    },
+    {
+      "path": "paper/figures/geometry_heatmaps.pdf",
+      "sha256": "413c551911916d6a2de94c4e802651bdd61f8d9af217a2e3edc1190ec6648df6"
+    },
+    {
+      "path": "paper/figures/geometry_robustness.pdf",
+      "sha256": "fd0f82369cd3d7fa1967fba2942767088d88cbcda96b0dc5f4516e4796a427e9"
+    },
+    {
+      "path": "paper/figures/objective_heatmaps.pdf",
+      "sha256": "a206a1f3c0d59bf1a1b3f61235da24567913d2f152a4e9392800c5bce962380b"
+    },
+    {
+      "path": "paper/figures/real_in_sample_vs_test.pdf",
+      "sha256": "03514c8291e76c98a5062c1c91ef1f47e59db0fe92481fc92073bbc60ba7e7e0"
+    },
+    {
+      "path": "paper/figures/split_sample_controls.pdf",
+      "sha256": "c57b73651096023a4735ce7295564c103d3fb3999ccd99a4869468643a11e885"
+    },
+    {
+      "path": "paper/main.tex",
+      "sha256": "e7e9d7ca8db8dfef8f86b3466c70a73288deb64a616321aa94339bc6fc491d57"
+    },
+    {
+      "path": "paper/main.pdf",
+      "sha256": "9380ab17a5eefec006e2a671420a73d45d8260c504d66614c0b97698a4671665"
+    },
+    {
+      "path": "paper/references.bib",
+      "sha256": "f271392b51c9a513c59751ca29059ea02c4097dc0ab9f1087bcf3a0369732447"
+    },
+    {
+      "path": "paper/iclr2026_conference.sty",
+      "sha256": "aacc4d71459c0cf978bca175f19e6de5b3c2202b7f806a587f9fe84f22b9f954"
+    },
+    {
+      "path": "paper/README.md",
+      "sha256": "270a66ec2f64b208897d4fd0bf30760b7e030e68e56e78b634dee7588711968e"
+    },
+    {
+      "path": "paper/ARTIFACTS.md",
+      "sha256": "f73525456f9239197fc9c5151e3b339d62d9951e99df5fdb52a8f9e85db4a63f"
+    },
+    {
+      "path": "paper/review_bundle/source/SMDM-513c351e7800.tar.gz",
+      "sha256": "dd9ff5033a4e306eb4ec0950b2ef8e04dcbcd452caecee0b1763159174205811"
+    },
+    {
+      "path": "report/INVALIDATED_RESULTS.md",
+      "sha256": "cdf83143ecfdd9d93c7359fb19215020fedfc9b5028e0b311b26e5723513a906"
+    },
+    {
+      "path": "runs/commands.md",
+      "sha256": "a74e3cfb95df46428b58c1c33a525f1b79f7c01b21c465a10c727807afa99b66"
+    },
+    {
+      "path": "runs/model_inventory.json",
+      "sha256": "8ada6acc82316c13b22c2792ad33643694f1378bfc722cde92d88821a7daee8c"
+    },
+    {
+      "path": "runs/data/gsm8k_tasks.jsonl",
+      "sha256": "a191018cd0cbe45b66f6bbb19d5ee1d6f932e56cb272133778d67a91eb0e0b99"
+    },
+    {
+      "path": "runs/data/gsm8k_tasks_manifest.json",
+      "sha256": "f3f158482989711ff01f45b2f25b8dc96bd7fe2961e7abba400dc65eb2cca856"
+    },
+    {
+      "path": "runs/data/geometry_corpora.jsonl",
+      "sha256": "918f497538950ecfe143a0b000746292379ea1f143d359c3915fd9bb4a4ebeb5"
+    },
+    {
+      "path": "runs/data/geometry_corpora_manifest.json",
+      "sha256": "ebeab56713bf5603967ba3cbf389d16b3a70bc83e6869b2bee1f5a94c9abfc65"
+    },
+    {
+      "path": "runs/backend_replay/backend_audit.json",
+      "sha256": "26eba7ca5d2b101b28b4fa2e36f51c39c63b7eb0d23591c202fccd0a99a7a96c"
+    },
+    {
+      "path": "runs/backend_replay/model_219m/benchmark.json",
+      "sha256": "297c4ad63eb13665254b555fe5be047c238817ab541bf8f56a6a5383d98a6b68"
+    },
+    {
+      "path": "runs/backend_replay/model_1_14b/benchmark.json",
+      "sha256": "38b7d98fdb7846e62667750f3f725acbe438e085af3e49649106bbca8136e0a0"
+    },
+    {
+      "path": "experiments/make_paper_figures.py",
+      "sha256": "12b0653cdc96326a497ba6ab9690230ef694ad84ca2405a2be691555e75b44ba"
+    },
+    {
+      "path": "experiments/simulate_fisher_null.py",
+      "sha256": "891ea9975bc5ed46a6abd67ccec54416013a7ada17f2791b66b7a6805e940ce6"
+    },
+    {
+      "path": "experiments/make_geometry_data.py",
+      "sha256": "5afd7f29263e4f19364337efd3ea7bdb5e83f4ffbad9759589fc7ca6c6e06188"
+    },
+    {
+      "path": "experiments/build_submission_manifest.py",
+      "sha256": "de038769605712e265f3efdfc94eefad464cad3cb9c2469af3fa5164194b1246"
+    },
+    {
+      "path": "experiments/run_audited_geometry_probe.py",
+      "sha256": "991113e2856385fd5e85972825b7324177e7c238b2ad44075e77b9577da52cd2"
+    },
+    {
+      "path": "experiments/build_comparison_contract.py",
+      "sha256": "a0d3526b5482126fab53a4c6b06068769cc82025041e876281d9302b5bcf6158"
+    },
+    {
+      "path": "experiments/build_review_bundle.py",
+      "sha256": "c4eed1802a399ad695a5c5ce3c15d6ab3554c468d967b3459d809780bffdf6c3"
+    },
+    {
+      "path": "experiments/build_backend_replay_audit.py",
+      "sha256": "bd191ba651492698acbd3159181fad4159a17801d9928571fea628badbc67124"
+    },
+    {
+      "path": "agent_skills/skill-train/scripts/checkpoint_info.py",
+      "sha256": "2cf17a58dc2d95f44303d2d5f800f4d83f8080ea5f6e8ee5c0bde9a39fb14a93"
+    },
+    {
+      "path": "assets/arXiv-2509.23593v2/inputs/proofs.tex",
+      "sha256": "b9ec26aa61d9cfd4fbbbdc1316e38cef0ab67acccfc872310aae8e4211362fe8"
+    },
+    {
+      "path": "paper/iclr2026_conference.bst",
+      "sha256": "2d67552db7ed38ccfccb5957b52f95656e25c249724761d3cf5f7922ad1844c5"
+    },
+    {
+      "path": "paper/natbib.sty",
+      "sha256": "88bc70c0e48461934cab5b2accef06b74a8b3ac45ad03ccd3f2a6b7e0d6d530d"
+    },
+    {
+      "path": "paper/fancyhdr.sty",
+      "sha256": "b56ec4434b9f4607529a4b23dc68ad8d4b94f1f631c8cddaf7da78140d53a5ea"
+    }
+  ],
+  "manifest_script_sha256": "de038769605712e265f3efdfc94eefad464cad3cb9c2469af3fa5164194b1246",
+  "manifest_command": [
+    "python",
+    "experiments/build_submission_manifest.py",
+    "--geometry",
+    "runs/r08_split_primary/gsm_170_s0/benchmark.json",
+    "runs/r08_split_primary/gsm_170_s1/benchmark.json",
+    "runs/r08_split_primary/gsm_170_s2/benchmark.json",
+    "runs/r08_split_primary/gsm_170_s3/benchmark.json",
+    "runs/r08_split_primary/gsm_170_s4/benchmark.json",
+    "runs/r08_split_primary/gsm_1028_s0/benchmark.json",
+    "runs/r08_split_primary/gsm_1028_s1/benchmark.json",
+    "runs/r08_split_primary/gsm_1028_s2/benchmark.json",
+    "runs/r12_audited_controls/gsm_all_170_s0/benchmark.json",
+    "runs/r12_audited_controls/gsm_all_170_s1/benchmark.json",
+    "runs/r12_audited_controls/gsm_all_170_s2/benchmark.json",
+    "runs/r12_audited_controls/gsm_one_170_s0/benchmark.json",
+    "runs/r12_audited_controls/gsm_one_170_s1_retry/benchmark.json",
+    "runs/r12_audited_controls/gsm_one_170_s2/benchmark.json",
+    "runs/r12_audited_controls/mt_170_s0/benchmark.json",
+    "runs/r12_audited_controls/mt_170_s1/benchmark.json",
+    "runs/r12_audited_controls/mt_170_s2/benchmark.json",
+    "runs/r12_audited_controls/reversal_170_s0/benchmark.json",
+    "runs/r12_audited_controls/reversal_170_s1/benchmark.json",
+    "runs/r12_audited_controls/reversal_170_s2/benchmark.json",
+    "runs/r10_attention_split/gsm_170_attn_s0_retry/benchmark.json",
+    "runs/r10_attention_split/gsm_170_attn_s1/benchmark.json",
+    "runs/r10_attention_split/gsm_170_attn_s2/benchmark.json",
+    "--comparison-contract",
+    "runs/r12_audited_controls/comparison_contract.json",
+    "--backend-audit",
+    "runs/backend_replay/backend_audit.json",
+    "--source-archive",
+    "paper/review_bundle/source/SMDM-513c351e7800.tar.gz",
+    "--extra",
+    "runs/r08_split_primary/isotropic_null_full.json",
+    "runs/r12_audited_controls/comparison_contract.json",
+    "paper/figures/figure_data.json",
+    "paper/figures/corpus_heatmaps.pdf",
+    "paper/figures/dense_slice_control.pdf",
+    "paper/figures/finite_sample_null.pdf",
+    "paper/figures/gaussian_counterexample.pdf",
+    "paper/figures/geometry_heatmaps.pdf",
+    "paper/figures/geometry_robustness.pdf",
+    "paper/figures/objective_heatmaps.pdf",
+    "paper/figures/real_in_sample_vs_test.pdf",
+    "paper/figures/split_sample_controls.pdf",
+    "paper/main.tex",
+    "paper/main.pdf",
+    "paper/references.bib",
+    "paper/iclr2026_conference.sty",
+    "paper/README.md",
+    "paper/ARTIFACTS.md",
+    "paper/review_bundle/source/SMDM-513c351e7800.tar.gz",
+    "report/INVALIDATED_RESULTS.md",
+    "runs/commands.md",
+    "runs/model_inventory.json",
+    "runs/data/gsm8k_tasks.jsonl",
+    "runs/data/gsm8k_tasks_manifest.json",
+    "runs/data/geometry_corpora.jsonl",
+    "runs/data/geometry_corpora_manifest.json",
+    "runs/backend_replay/backend_audit.json",
+    "runs/backend_replay/model_219m/benchmark.json",
+    "runs/backend_replay/model_1_14b/benchmark.json",
+    "experiments/make_paper_figures.py",
+    "experiments/simulate_fisher_null.py",
+    "experiments/make_geometry_data.py",
+    "experiments/build_submission_manifest.py",
+    "experiments/run_audited_geometry_probe.py",
+    "experiments/build_comparison_contract.py",
+    "experiments/build_review_bundle.py",
+    "experiments/build_backend_replay_audit.py",
+    "agent_skills/skill-train/scripts/checkpoint_info.py",
+    "assets/arXiv-2509.23593v2/inputs/proofs.tex",
+    "paper/iclr2026_conference.bst",
+    "paper/natbib.sty",
+    "paper/fancyhdr.sty",
+    "--output",
+    "runs/submission_manifest.json"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "output": "runs/data/geometry_corpora.jsonl",
+  "sha256": "918f497538950ecfe143a0b000746292379ea1f143d359c3915fd9bb4a4ebeb5",
+  "source_sha256": {
+    "external/SMDM/data/mt_bench/question.jsonl": "119565adbab82227089cefdb44c8d7e2cf04dc0a0ec233634c82e7d4e2a944f7",
+    "external/SMDM/data/reverse_experiments/june_version_7921032488/d2p_prompts_test.jsonl": "67705c9ebd77fc030998677acae33af9f22cf4b80bb7443d4ef7e5c9c1d727c4",
+    "external/SMDM/data/reverse_experiments/june_version_7921032488/p2d_prompts_test.jsonl": "269fe15363c3bd1cb59cfdf4e6464f35d548d4cb786e6f7b1db84f260788e8f8"
+  },
+  "tokenizer": "assets/tinyllama-tokenizer",
+  "sequence_length": 64,
+  "records": {
+    "mt_bench": 131,
+    "reversal": 298
+  },
+  "packing": "source-order documents separated by EOS; non-overlapping fixed-length chunks; final short chunk dropped"
+}
