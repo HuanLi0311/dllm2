@@ -46,6 +46,17 @@ def _recomputed_endpoints(run: dict) -> dict:
     }
 
 
+def _assert_finite(value, path: str = "run") -> None:
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValueError(f"non-finite value at {path}: {value}")
+    if isinstance(value, dict):
+        for key, item in value.items():
+            _assert_finite(item, f"{path}.{key}")
+    elif isinstance(value, (list, tuple)):
+        for index, item in enumerate(value):
+            _assert_finite(item, f"{path}[{index}]")
+
+
 def summarize(run_root: Path) -> dict:
     contract_path = run_root / "contract.json"
     contract = json.loads(contract_path.read_text())
@@ -64,6 +75,7 @@ def summarize(run_root: Path) -> dict:
     input_reference = next(iter(runs.values()))["inputs"]
     for (method, seed), run in runs.items():
         path = expected[(method, seed)]
+        _assert_finite(run, path.name)
         if run.get("status") != "ok" or run.get("experiment") != "r22_scale1028_weighted_trace_match":
             raise ValueError(f"invalid R22 result: {path}")
         protocol = run["protocol"]
@@ -96,9 +108,6 @@ def summarize(run_root: Path) -> dict:
         for endpoint, expected_value in recomputed.items():
             if not math.isclose(run["summary"][endpoint], expected_value, rel_tol=1e-12, abs_tol=1e-12):
                 raise ValueError(f"summary recomputation failed: {path}: {endpoint}")
-        values = [*run["summary"].values(), *run["stages"][1]["training"].values()]
-        if not all(not isinstance(value, float) or math.isfinite(value) for value in values):
-            raise ValueError(f"non-finite output: {path}")
 
     for seed in SEEDS:
         reference = runs[("gd", seed)]
@@ -183,6 +192,12 @@ def _self_check() -> None:
     assert _recomputed_endpoints(toy) == {
         "final_average_loss": 1.5, "past_task_forgetting": 1.5, "final_task_loss": 0.5,
     }
+    try:
+        _assert_finite({"nested": [{"value": float("inf")}]})
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("recursive finite check accepted infinity")
     print(json.dumps({"self_check": "ok"}))
 
 

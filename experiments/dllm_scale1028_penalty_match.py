@@ -94,6 +94,17 @@ def _matched_stiffness(alpha: float, diagonal_trace: float) -> dict:
     return {"weighted_trace_target": target, "matched_lambdas": lambdas, "weighted_trace_checks": checks}
 
 
+def _assert_finite(value, path: str = "result") -> None:
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValueError(f"non-finite value at {path}: {value}")
+    if isinstance(value, dict):
+        for key, item in value.items():
+            _assert_finite(item, f"{path}.{key}")
+    elif isinstance(value, (list, tuple)):
+        for index, item in enumerate(value):
+            _assert_finite(item, f"{path}[{index}]")
+
+
 def run(args) -> dict:
     started = time.monotonic()
     if args.output.exists():
@@ -139,6 +150,8 @@ def run(args) -> dict:
     if len(replay_manifest) != 1 or replay_manifest[0]["fact_counts"] != expected_counts:
         raise AssertionError("R22 replay prompts are not balanced 16/16/16/16")
     replay = transfer._generate_replay(model, tokenizer, prompts, device, args)
+    if len(replay) != 64:
+        raise AssertionError(f"unexpected R22 replay size: {len(replay)}")
     teacher = load_model(args, device)
     teacher.load_state_dict(model.state_dict())
     teacher.eval()
@@ -224,6 +237,7 @@ def run(args) -> dict:
         "stages": stages,
         "summary": r19._summary(stages, tasks),
     }
+    _assert_finite(result)
     if _dependencies() != dependencies:
         raise RuntimeError("source/protocol provenance changed during R22 run")
     if _inputs(args, tasks) != inputs:
@@ -254,6 +268,13 @@ def _self_check() -> None:
         {"metrics": {"a": {"loss": 2.0, "answer_token_accuracy": 0.5},
                      "b": {"loss": 0.5, "answer_token_accuracy": 0.75}}},
     ], [{"name": "a"}, {"name": "b"}])["final_average_loss"] == 1.25
+    _assert_finite({"values": [0.0, 1.0]})
+    try:
+        _assert_finite({"values": [float("nan")]})
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("recursive finite check accepted NaN")
     print(json.dumps({"self_check": "ok"}))
 
 
