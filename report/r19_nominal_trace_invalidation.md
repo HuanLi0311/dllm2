@@ -39,6 +39,12 @@ is recorded.
   failed during a concurrent pre-run Python standard-library import, before
   model loading and before any JSON result.  Its original log and exit file
   are retained.
+- The stopped family ended with 14 status-`ok` JSON files.  The four cells
+  never run are Diagonal+GD at seeds 3408--3409 under each of clips 1 and
+  `1e6`.  Several already-running Python children became orphans when their
+  queue launchers were terminated and consequently have no queue-written
+  exit file; their logs and JSONs remain intact.  This incomplete family is
+  not summarized as a registered 18-cell grid.
 
 No R19 result, positive or negative, is eligible for reporting as a
 trace-matched comparison.
