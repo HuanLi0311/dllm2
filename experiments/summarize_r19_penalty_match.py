@@ -135,7 +135,7 @@ def summarize(run_root: Path) -> dict:
             aggregate[str(clip)][method]["clip_fraction"] = _stats([
                 runs[(method, clip, seed)]["stages"][1]["training"]["clip_fraction"] for seed in SEEDS
             ])
-            aggregate[str(clip)][method]["ewc_loss_mean"] = _stats([
+            aggregate[str(clip)][method]["weighted_ewc_mean"] = _stats([
                 runs[(method, clip, seed)]["stages"][1]["training"]["ewc_loss_mean"] for seed in SEEDS
             ])
             aggregate[str(clip)][method]["preclip_gradient_norm_max"] = _stats([
