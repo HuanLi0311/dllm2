@@ -219,15 +219,19 @@ def _full_fisher_pass(
     }
 
 
-def _test_gram(vectors: list[torch.Tensor], size: int, chunk_size: int) -> torch.Tensor:
+def _test_gram(
+    vectors: list[torch.Tensor], size: int, chunk_size: int, direction: torch.Tensor
+) -> tuple[torch.Tensor, float]:
     gram = torch.zeros((len(vectors), len(vectors)), dtype=torch.float64)
+    projections = torch.zeros(len(vectors), dtype=torch.float64)
     for left in range(0, size, chunk_size):
         right = min(left + chunk_size, size)
         block = torch.stack([vector[left:right] for vector in vectors]).double()
         gram.addmm_(block, block.T)
+        projections.addmv_(block, direction[left:right].double())
         del block
         print(f"test_gram_parameters={right}/{size}", flush=True)
-    return gram
+    return gram, float(projections.square().mean())
 
 
 def _geometry_from_sufficient(
@@ -463,14 +467,16 @@ def run(args) -> dict:
         test_diagonal.addcmul_(value64, value64)
         del value64
     test_diagonal.div_(len(test))
-    test_gram = _test_gram(test_pass["vectors"], full_size, args.gram_chunk_size)
+    test_gram, test_projection_square_mean = _test_gram(
+        test_pass["vectors"], full_size, args.gram_chunk_size, calibration_direction
+    )
     full_geometry = _geometry_from_sufficient(
         calibration_direction,
         calibration_second["projection_square_sum"] / len(calibration),
         calibration_mean_norm,
         calibration_diagonal,
         test_diagonal,
-        test_pass["projection_square_sum"] / len(test),
+        test_projection_square_mean,
         test_gram,
         len(calibration),
         len(test),
@@ -610,9 +616,9 @@ def _self_check() -> None:
     operational_coefficient = sum(
         float(torch.dot(row.float(), operational_direction).square()) for row in gc
     ) / len(gc)
-    test_projection_mean = sum(
-        float(torch.dot(row.float(), operational_direction).square()) for row in gt
-    ) / len(gt)
+    test_projection_mean = float(
+        (gt.double() @ operational_direction.double()).square().mean()
+    )
     streamed = _geometry_from_sufficient(
         operational_direction,
         operational_coefficient,
