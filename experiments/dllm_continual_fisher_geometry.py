@@ -495,8 +495,8 @@ def run(args) -> dict:
     if (
         anchor_checks["training_current_mean_abs_difference"] > 1e-9
         or anchor_checks["training_clip_fraction_abs_difference"] > 0.0
-        or anchor_checks["rank1_coefficient_relative_difference"] > 1e-4
-        or anchor_checks["diagonal_trace_relative_difference"] > 1e-4
+        or anchor_checks["rank1_coefficient_relative_difference"] > 1e-6
+        or anchor_checks["diagonal_trace_relative_difference"] > 1e-6
     ):
         raise AssertionError(f"post-Task-1 state does not reproduce R16 anchors: {anchor_checks}")
     slice_geometry = {
