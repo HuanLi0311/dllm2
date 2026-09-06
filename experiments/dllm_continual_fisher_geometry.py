@@ -34,6 +34,14 @@ PROBES = (
     "transformer.h.17.norm_1.weight",
     "transformer.h.0.attn.proj.weight",
 )
+R16_ANCHORS = {
+    3407: {"current_mean": 0.15928860665256275, "clip_fraction": 0.236,
+           "rank1_coefficient": 0.0008613997596079841, "diagonal_trace": 0.002578950487077236},
+    3408: {"current_mean": 0.14222952271252223, "clip_fraction": 0.239,
+           "rank1_coefficient": 0.002652776763081589, "diagonal_trace": 0.005044732242822647},
+    3409: {"current_mean": 0.1648787468732853, "clip_fraction": 0.253,
+           "rank1_coefficient": 0.01223424401850455, "diagonal_trace": 0.019160481169819832},
+}
 
 
 def _utc_now() -> str:
@@ -235,7 +243,7 @@ def _geometry_from_sufficient(
     mu_norm_sq = torch.dot(mean, mean)
     if not float(mu_norm_sq) > 0.0:
         raise ValueError("zero calibration mean gradient")
-    coefficient = torch.as_tensor(calibration_projection_square_mean) / mu_norm_sq.square()
+    coefficient = torch.as_tensor(calibration_projection_square_mean, dtype=torch.float64) / mu_norm_sq.square()
     normalized_test_gram = test_gram / test_examples
     fisher_norm_sq = normalized_test_gram.square().sum()
     rank1_inner = coefficient * test_projection_square_mean
@@ -248,7 +256,7 @@ def _geometry_from_sufficient(
     diagonal_error = torch.sqrt(
         (fisher_norm_sq - 2 * diagonal_inner + diagonal_norm_sq).clamp_min(0) / fisher_norm_sq
     )
-    test_coefficient = torch.as_tensor(test_projection_square_mean) / mu_norm_sq.square()
+    test_coefficient = torch.as_tensor(test_projection_square_mean, dtype=torch.float64) / mu_norm_sq.square()
     direction_oracle_error = torch.sqrt(
         (
             fisher_norm_sq
@@ -423,8 +431,8 @@ def run(args) -> dict:
         model, calibration, all_parameters, full_size, probe_layout,
         pad_id, device, calibration_seed,
     )
-    calibration_mean = calibration_first["gradient_sum"] / len(calibration)
-    calibration_diagonal = calibration_first["diagonal_sum"] / len(calibration)
+    calibration_mean = calibration_first["gradient_sum"].div_(len(calibration))
+    calibration_diagonal = calibration_first["diagonal_sum"].div_(len(calibration))
     calibration_second = _full_fisher_pass(
         model, calibration, all_parameters, full_size, probe_layout,
         pad_id, device, calibration_seed, mean=calibration_mean,
@@ -456,6 +464,24 @@ def run(args) -> dict:
         len(calibration),
         len(test),
     )
+    anchor = R16_ANCHORS[args.seed]
+    anchor_checks = {
+        "training_current_mean_abs_difference": abs(training["current_mean"] - anchor["current_mean"]),
+        "training_clip_fraction_abs_difference": abs(training["clip_fraction"] - anchor["clip_fraction"]),
+        "rank1_coefficient_relative_difference": abs(
+            full_geometry["rank1_ewc_direction_coefficient"] - anchor["rank1_coefficient"]
+        ) / anchor["rank1_coefficient"],
+        "diagonal_trace_relative_difference": abs(
+            full_geometry["diagonal_trace"] - anchor["diagonal_trace"]
+        ) / anchor["diagonal_trace"],
+    }
+    if (
+        anchor_checks["training_current_mean_abs_difference"] > 1e-9
+        or anchor_checks["training_clip_fraction_abs_difference"] > 0.0
+        or anchor_checks["rank1_coefficient_relative_difference"] > 1e-4
+        or anchor_checks["diagonal_trace_relative_difference"] > 1e-4
+    ):
+        raise AssertionError(f"post-Task-1 state does not reproduce R16 anchors: {anchor_checks}")
     slice_geometry = {
         name: _geometry(
             torch.stack(calibration_first["slices"][name]),
@@ -494,6 +520,8 @@ def run(args) -> dict:
             "seed": args.seed,
         },
         "training_state": {
+            "r16_anchor": anchor,
+            "r16_anchor_checks": anchor_checks,
             "initial_parameter_moments": initial_moments,
             "learned_parameter_moments": learned_moments,
             "probe_tensor_sha256_after_task": probe_state_sha256,
@@ -594,7 +622,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--seed", type=int, default=3407)
     parser.add_argument("--device", default="cuda")
-    parser.add_argument("--gram-chunk-size", type=int, default=262144)
+    parser.add_argument("--gram-chunk-size", type=int, default=1048576)
     parser.add_argument("--self-check", action="store_true")
     args = parser.parse_args()
     if not args.self_check and args.output is None:
