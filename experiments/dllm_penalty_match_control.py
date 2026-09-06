@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Penalty-gradient-matched EWC structure and clipping control for SMDM."""
+"""Weighted-trace-matched EWC structure and clipping control for SMDM."""
 
 from __future__ import annotations
 
 import argparse
 import datetime as dt
-import gc
 import hashlib
 import json
 import math
@@ -67,14 +66,6 @@ def _dependencies() -> dict[str, str]:
         ROOT / "continual_reverse.py",
     )
     return {str(path.relative_to(ROOT)): _sha256(path) for path in paths}
-
-
-def _raw_penalty_gradient_norms(reference, displaced, direction, coefficient, diagonal):
-    delta = displaced - reference
-    rank1_projection = torch.dot(delta.float(), direction.float())
-    rank1_norm = coefficient * rank1_projection.abs()
-    diagonal_norm = torch.linalg.vector_norm(diagonal.float() * delta.float())
-    return rank1_norm, diagonal_norm, rank1_projection
 
 
 def _summary(stages, tasks) -> dict:
@@ -164,39 +155,18 @@ def run(args) -> dict:
     for parameter in teacher.parameters():
         parameter.requires_grad_(False)
     reference = flat_parameters(parameters).detach().clone()
-
-    probe = load_model(args, device)
-    probe.load_state_dict(model.state_dict())
-    probe_parameters = trainable_parameters(probe, "all")
-    probe_teacher = load_model(args, device)
-    probe_teacher.load_state_dict(model.state_dict())
-    probe_teacher.eval()
-    for parameter in probe_teacher.parameters():
-        parameter.requires_grad_(False)
-    args.steps_per_task = 100
-    args.clip = 1.0
-    probe_training = multitask._train_stage(
-        probe, tasks[1]["train"], probe_parameters, pad_id, device, args,
-        args.seed + 2000, teacher=probe_teacher, replay_rows=replay,
-    )
-    displaced = flat_parameters(probe_parameters).detach()
-    rank1_norm, diagonal_norm, rank1_projection = _raw_penalty_gradient_norms(
-        reference, displaced, fisher["direction"].to(device),
-        float(fisher["coefficient"]), fisher["diagonal"].to(device),
-    )
-    raw_norms = {"rank1": float(rank1_norm), "diagonal": float(diagonal_norm)}
-    if not all(math.isfinite(value) and value > 0 for value in raw_norms.values()):
-        raise ValueError(f"invalid penalty-gradient calibration norms: {raw_norms}")
-    matched_lambdas = {kind: 1.0 / value for kind, value in raw_norms.items()}
-    match_checks = {
-        kind: matched_lambdas[kind] * raw_norms[kind] for kind in raw_norms
+    alpha = float(fisher["coefficient"])
+    diagonal_trace = float(fisher_stats["diagonal_trace"])
+    if not all(math.isfinite(value) and value > 0 for value in (alpha, diagonal_trace)):
+        raise ValueError("rank-1 coefficient and diagonal trace must be finite and positive")
+    weighted_trace_target = 1_000.0 * diagonal_trace
+    matched_lambdas = {"rank1": weighted_trace_target / alpha, "diagonal": 1_000.0}
+    weighted_trace_checks = {
+        "rank1": matched_lambdas["rank1"] * alpha,
+        "diagonal": matched_lambdas["diagonal"] * diagonal_trace,
     }
-    if any(abs(value - 1.0) > 1e-6 for value in match_checks.values()):
-        raise AssertionError(f"penalty-gradient norm matching failed: {match_checks}")
-    del displaced, probe, probe_parameters, probe_teacher
-    gc.collect()
-    if device.type == "cuda":
-        torch.cuda.empty_cache()
+    if any(abs(value - weighted_trace_target) > 1e-9 * weighted_trace_target for value in weighted_trace_checks.values()):
+        raise AssertionError(f"weighted-trace matching failed: {weighted_trace_checks}")
 
     constraint = None
     effective_lambda = 0.0
@@ -234,7 +204,7 @@ def run(args) -> dict:
     result = {
         "schema_version": 1,
         "status": "ok",
-        "experiment": "r19_penalty_match",
+        "experiment": "r19_weighted_trace_match",
         "role": "exploratory_predeclared_complete_grid",
         "created_utc": _utc_now(),
         "wall_time_seconds": time.monotonic() - started,
@@ -247,20 +217,18 @@ def run(args) -> dict:
             "full_parameter_training": True,
             "objective": "r16_answer_only_independent_bernoulli_allow_empty_importance_weighted",
             "task_a_clip": 1.0, "task_b_clip": args.b_clip,
-            "probe_steps": 100, "probe_clip": 1.0,
-            "target_penalty_gradient_norm": 1.0,
+            "matching": "lambda_rank1_times_alpha_equals_lambda_diagonal_times_trace_diagonal",
+            "diagonal_anchor_lambda": 1000.0,
             "replay_fact_counts": replay_manifest[0]["fact_counts"],
         },
         "task_a_anchor": anchor,
         "task_a_anchor_checks": anchor_checks,
         "fisher": fisher_stats,
-        "penalty_match": {
-            "common_displacement_rank1_projection": float(rank1_projection),
-            "raw_gradient_norms": raw_norms,
+        "stiffness_match": {
+            "weighted_trace_target": weighted_trace_target,
             "matched_lambdas": matched_lambdas,
-            "matched_gradient_norm_checks": match_checks,
+            "weighted_trace_checks": weighted_trace_checks,
             "effective_lambda": effective_lambda,
-            "probe_training": probe_training,
         },
         "replay": {
             "examples": len(replay), "manifest": replay_manifest,
@@ -291,21 +259,15 @@ def run(args) -> dict:
 
 
 def _self_check() -> None:
-    parameter = torch.tensor([0.4, -0.7], requires_grad=True)
-    reference = torch.tensor([0.1, -0.2])
     direction = torch.tensor([3.0, 4.0]) / 5
     coefficient = 2.5
     diagonal = torch.tensor([0.5, 1.5])
-    delta = parameter - reference
-    rank1_penalty = 0.5 * coefficient * torch.dot(direction, delta).square()
-    diagonal_penalty = 0.5 * torch.dot(diagonal, delta.square())
-    rank1_gradient = torch.autograd.grad(rank1_penalty, parameter, retain_graph=True)[0]
-    diagonal_gradient = torch.autograd.grad(diagonal_penalty, parameter)[0]
-    analytic_rank1, analytic_diagonal, _ = _raw_penalty_gradient_norms(
-        reference, parameter.detach(), direction, coefficient, diagonal
-    )
-    assert math.isclose(float(analytic_rank1), float(torch.linalg.vector_norm(rank1_gradient)), rel_tol=1e-7)
-    assert math.isclose(float(analytic_diagonal), float(torch.linalg.vector_norm(diagonal_gradient)), rel_tol=1e-7)
+    target = 1_000.0 * float(diagonal.sum())
+    rank1_lambda = target / coefficient
+    rank1_matrix = rank1_lambda * coefficient * torch.outer(direction, direction)
+    diagonal_matrix = 1_000.0 * torch.diag(diagonal)
+    assert math.isclose(float(torch.trace(rank1_matrix)), target, rel_tol=1e-7)
+    assert math.isclose(float(torch.trace(diagonal_matrix)), target, rel_tol=1e-7)
     assert multitask._sft_losses is transfer._sft_losses
     mock = [{"name": "a", "train_raw": [
         {"fact_id": fact, "prompt": f"p-{fact}-{index}"}
