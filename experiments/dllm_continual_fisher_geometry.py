@@ -171,12 +171,14 @@ def _full_fisher_pass(
     pad_id,
     device,
     seed,
-    mean=None,
+    projection=None,
     retain_vectors=False,
 ):
     generator = torch.Generator(device=device).manual_seed(seed)
-    gradient_sum = torch.zeros(size, dtype=torch.float64) if mean is None else None
-    diagonal_sum = torch.zeros(size, dtype=torch.float64) if mean is None else None
+    # Match the R16 estimator exactly: its operational Fisher tensors are
+    # accumulated and projected in float32.
+    gradient_sum = torch.zeros(size, dtype=torch.float32) if projection is None else None
+    diagonal_sum = torch.zeros(size, dtype=torch.float32) if projection is None else None
     projection_square_sum = 0.0
     vectors = []
     slices = {name: [] for name in PROBES}
@@ -188,23 +190,21 @@ def _full_fisher_pass(
             model, row, pad_id, device, generator, 1e-3, 1.0
         )
         vector = _full_gradient(loss, parameters, size)
-        value64 = vector.double()
-        if mean is None:
-            gradient_sum.add_(value64)
-            diagonal_sum.addcmul_(value64, value64)
+        if projection is None:
+            gradient_sum.add_(vector)
+            diagonal_sum.addcmul_(vector, vector)
             for name, (left, right) in probe_layout.items():
                 slices[name].append(vector[left:right].clone())
         else:
-            projection_square_sum += float(torch.dot(value64, mean).square())
+            projection_square_sum += float(torch.dot(vector, projection).square())
         if retain_vectors:
             vectors.append(vector)
-            if mean is not None:
+            if projection is not None:
                 for name, (left, right) in probe_layout.items():
                     slices[name].append(vector[left:right].clone())
         losses.append(float(loss.detach().cpu()))
         masks.append(mask_audit)
         model.zero_grad(set_to_none=True)
-        del value64
         if not retain_vectors:
             del vector
         print(f"full_gradient={index + 1}/{len(rows)} seed={seed}", flush=True)
@@ -231,37 +231,40 @@ def _test_gram(vectors: list[torch.Tensor], size: int, chunk_size: int) -> torch
 
 
 def _geometry_from_sufficient(
-    mean: torch.Tensor,
+    direction: torch.Tensor,
+    rank1_coefficient: float,
+    mean_gradient_norm: float,
     calibration_diagonal: torch.Tensor,
-    calibration_projection_square_mean: float,
     test_diagonal: torch.Tensor,
     test_projection_square_mean: float,
     test_gram: torch.Tensor,
     calibration_examples: int,
     test_examples: int,
 ) -> dict:
-    mu_norm_sq = torch.dot(mean, mean)
-    if not float(mu_norm_sq) > 0.0:
-        raise ValueError("zero calibration mean gradient")
-    coefficient = torch.as_tensor(calibration_projection_square_mean, dtype=torch.float64) / mu_norm_sq.square()
+    direction64 = direction.double()
+    direction_norm_sq = torch.dot(direction64, direction64)
+    coefficient = torch.as_tensor(rank1_coefficient, dtype=torch.float64)
+    if not float(direction_norm_sq) > 0.0 or not float(coefficient) > 0.0:
+        raise ValueError("zero/non-positive operational rank-1 Fisher")
     normalized_test_gram = test_gram / test_examples
     fisher_norm_sq = normalized_test_gram.square().sum()
     rank1_inner = coefficient * test_projection_square_mean
-    rank1_norm_sq = coefficient.square() * mu_norm_sq.square()
-    diagonal_inner = torch.dot(test_diagonal, calibration_diagonal)
-    diagonal_norm_sq = calibration_diagonal.square().sum()
+    rank1_norm_sq = coefficient.square() * direction_norm_sq.square()
+    calibration_diagonal64 = calibration_diagonal.double()
+    diagonal_inner = torch.dot(test_diagonal, calibration_diagonal64)
+    diagonal_norm_sq = calibration_diagonal64.square().sum()
     rank1_error = torch.sqrt(
         (fisher_norm_sq - 2 * rank1_inner + rank1_norm_sq).clamp_min(0) / fisher_norm_sq
     )
     diagonal_error = torch.sqrt(
         (fisher_norm_sq - 2 * diagonal_inner + diagonal_norm_sq).clamp_min(0) / fisher_norm_sq
     )
-    test_coefficient = torch.as_tensor(test_projection_square_mean, dtype=torch.float64) / mu_norm_sq.square()
+    test_coefficient = torch.as_tensor(test_projection_square_mean, dtype=torch.float64) / direction_norm_sq.square()
     direction_oracle_error = torch.sqrt(
         (
             fisher_norm_sq
             - 2 * test_coefficient * test_projection_square_mean
-            + test_coefficient.square() * mu_norm_sq.square()
+            + test_coefficient.square() * direction_norm_sq.square()
         ).clamp_min(0)
         / fisher_norm_sq
     )
@@ -277,10 +280,11 @@ def _geometry_from_sufficient(
     result = {
         "calibration_examples": calibration_examples,
         "test_examples": test_examples,
-        "parameter_count": mean.numel(),
-        "mean_gradient_norm": float(torch.sqrt(mu_norm_sq)),
+        "parameter_count": direction.numel(),
+        "mean_gradient_norm": mean_gradient_norm,
+        "rank1_direction_norm": float(torch.sqrt(direction_norm_sq)),
         "rank1_coefficient": float(coefficient),
-        "rank1_ewc_direction_coefficient": float(coefficient * mu_norm_sq),
+        "rank1_ewc_direction_coefficient": float(coefficient),
         "diagonal_trace": float(calibration_diagonal.sum()),
         "test_fisher_frobenius": float(torch.sqrt(fisher_norm_sq)),
         "rank1_relative_frobenius_error": float(rank1_error),
@@ -435,9 +439,13 @@ def run(args) -> dict:
     )
     calibration_mean = calibration_first["gradient_sum"].div_(len(calibration))
     calibration_diagonal = calibration_first["diagonal_sum"].div_(len(calibration))
+    calibration_mean_norm = float(calibration_mean.norm())
+    if not calibration_mean_norm > 0.0:
+        raise ValueError("zero calibration mean gradient")
+    calibration_direction = calibration_mean / calibration_mean_norm
     calibration_second = _full_fisher_pass(
         model, calibration, all_parameters, full_size, probe_layout,
-        pad_id, device, calibration_seed, mean=calibration_mean,
+        pad_id, device, calibration_seed, projection=calibration_direction,
     )
     repeat_loss_max_abs_difference = max(
         abs(first - second)
@@ -447,7 +455,7 @@ def run(args) -> dict:
         raise AssertionError("calibration mask replay changed between Fisher passes")
     test_pass = _full_fisher_pass(
         model, test, all_parameters, full_size, probe_layout,
-        pad_id, device, test_seed, mean=calibration_mean, retain_vectors=True,
+        pad_id, device, test_seed, projection=calibration_direction, retain_vectors=True,
     )
     test_diagonal = torch.zeros(full_size, dtype=torch.float64)
     for vector in test_pass["vectors"]:
@@ -457,9 +465,10 @@ def run(args) -> dict:
     test_diagonal.div_(len(test))
     test_gram = _test_gram(test_pass["vectors"], full_size, args.gram_chunk_size)
     full_geometry = _geometry_from_sufficient(
-        calibration_mean,
-        calibration_diagonal,
+        calibration_direction,
         calibration_second["projection_square_sum"] / len(calibration),
+        calibration_mean_norm,
+        calibration_diagonal,
         test_diagonal,
         test_pass["projection_square_sum"] / len(test),
         test_gram,
@@ -471,7 +480,7 @@ def run(args) -> dict:
         "training_current_mean_abs_difference": abs(training["current_mean"] - anchor["current_mean"]),
         "training_clip_fraction_abs_difference": abs(training["clip_fraction"] - anchor["clip_fraction"]),
         "rank1_coefficient_relative_difference": abs(
-            full_geometry["rank1_ewc_direction_coefficient"] - anchor["rank1_coefficient"]
+            full_geometry["rank1_coefficient"] - anchor["rank1_coefficient"]
         ) / anchor["rank1_coefficient"],
         "diagonal_trace_relative_difference": abs(
             full_geometry["diagonal_trace"] - anchor["diagonal_trace"]
@@ -594,24 +603,47 @@ def _self_check() -> None:
     diagonal_error = torch.linalg.matrix_norm(ftest - diagonal) / torch.linalg.matrix_norm(ftest)
     assert math.isclose(actual["rank1_relative_frobenius_error"], float(rank1_error), rel_tol=1e-10)
     assert math.isclose(actual["diagonal_relative_frobenius_error"], float(diagonal_error), rel_tol=1e-10)
+    operational_mean = gc.float().sum(dim=0).div_(len(gc))
+    operational_mean_norm = float(operational_mean.norm())
+    operational_direction = operational_mean / operational_mean_norm
+    operational_diagonal = gc.float().square().sum(dim=0).div_(len(gc))
+    operational_coefficient = sum(
+        float(torch.dot(row.float(), operational_direction).square()) for row in gc
+    ) / len(gc)
+    test_projection_mean = sum(
+        float(torch.dot(row.float(), operational_direction).square()) for row in gt
+    ) / len(gt)
     streamed = _geometry_from_sufficient(
-        gc.double().mean(dim=0),
-        gc.double().square().mean(dim=0),
-        float((gc.double() @ gc.double().mean(dim=0)).square().mean()),
+        operational_direction,
+        operational_coefficient,
+        operational_mean_norm,
+        operational_diagonal,
         gt.double().square().mean(dim=0),
-        float((gt.double() @ gc.double().mean(dim=0)).square().mean()),
+        test_projection_mean,
         gt.double() @ gt.double().T,
         len(gc),
         len(gt),
     )
+    explicit_rank1 = operational_coefficient * torch.outer(
+        operational_direction.double(), operational_direction.double()
+    )
+    explicit_diagonal = torch.diag(operational_diagonal.double())
+    explicit_test = gt.double().T @ gt.double() / len(gt)
+    explicit_rank1_error = torch.linalg.matrix_norm(explicit_test - explicit_rank1) / torch.linalg.matrix_norm(explicit_test)
+    explicit_diagonal_error = torch.linalg.matrix_norm(explicit_test - explicit_diagonal) / torch.linalg.matrix_norm(explicit_test)
+    assert math.isclose(streamed["rank1_relative_frobenius_error"], float(explicit_rank1_error), rel_tol=1e-10)
+    assert math.isclose(streamed["diagonal_relative_frobenius_error"], float(explicit_diagonal_error), rel_tol=1e-10)
+    assert math.isclose(
+        streamed["heldout_score_log_diag_over_rank1"],
+        math.log(float(explicit_diagonal_error / explicit_rank1_error)),
+        rel_tol=1e-10,
+    )
     for key in (
-        "rank1_relative_frobenius_error",
-        "diagonal_relative_frobenius_error",
         "heldout_score_log_diag_over_rank1",
         "heldout_direction_oracle_error",
         "heldout_best_rank1_error",
     ):
-        assert math.isclose(streamed[key], actual[key], rel_tol=1e-10, abs_tol=1e-12), key
+        assert math.isfinite(streamed[key]), key
 
     class ToyModel(torch.nn.Module):
         def __init__(self):

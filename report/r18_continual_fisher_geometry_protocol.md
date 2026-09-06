@@ -1,8 +1,13 @@
 # R18 continual-task Fisher geometry protocol
 
-**Frozen on 2026-09-07 before inspecting any R18 result.** This is a new,
-exploratory run family.  It neither changes nor pools with the locked R16
-submission matrix.
+**Revision 2 frozen on 2026-09-07 before any successful R18 result.** This is
+a new, exploratory run family.  It neither changes nor pools with the locked
+R16 submission matrix.  The revision-1 mechanical pilot completed its matrix
+calculation but failed the pre-write R16 anchor check: it accumulated the mean
+gradient in float64 rather than reproducing R16's operational float32 Fisher.
+That failed log is retained and supplies no result.  Revision 2 fixes the
+precision definition below; it does not change rows, masks, seeds, endpoints,
+or the completion rule.
 
 ## Question and claim boundary
 
@@ -31,22 +36,28 @@ utility experiment.
   per row with seed `seed + 4101`.  Calibration and test prompt strings must
   have empty intersection or the run fails.
 - Primary parameter set: all 219,050,496 trainable parameters.  Calibration
-  moments are streamed, calibration projections are obtained in a second
-  identical-mask pass, and the 40 test gradients are retained on CPU only long
-  enough to compute the exact test Gram matrix in parameter chunks.
+  moments are streamed in float32 in the same parameter order as R16.  Let
+  `u32` be R16's float32-normalized mean gradient, `alpha32` the mean of its
+  float32 squared projections in a second identical-mask pass, and `D32` its
+  float32 mean squared-gradient diagonal.  These are the actual tensors used
+  by R16 EWC.  The 40 test gradients are retained on CPU only long enough to
+  compute the exact float64 test Gram matrix in parameter chunks.
 - Secondary slices: `transformer.h.{0,8,17}.norm_1.weight` and
   `transformer.h.0.attn.proj.weight`, extracted from those same full gradients.
 - Optimization/probe seeds: 3407, 3408, 3409.  Seed 3407 is a mechanical
   pilot.  Once it passes the checks below, seeds 3408 and 3409 run unchanged,
   regardless of the sign or size of the pilot result.
 
-For the full parameter set and each secondary slice, calibration fits
-`R_mu = c mu mu^T` and `D = diag(F_cal)`.  Both are scored only against
-`F_test`; the primary score is `s = log(error_D / error_R_mu)`, positive when
-rank-1 has lower held-out relative Frobenius error.  Report the full-parameter
-score for every seed and its mean/SEM, plus every secondary slice, the
-unweighted slice mean, and slice wins.  No significance claim is planned for
-three seeds.
+For the full parameter set, the primary comparison scores the operational
+matrices `R = alpha32 u32 u32^T` and `D = diag(D32)` only against `F_test`.
+The exact sufficient-statistic identity is
+`||F_test-R||_F^2 = ||F_test||_F^2 - 2 alpha32 E[(g^T u32)^2]
++ alpha32^2 ||u32||^4`.  Each secondary slice retains the independently fitted
+local diagnostic `R_mu = c mu mu^T`.  The primary score is
+`s = log(error_D / error_R)`, positive when rank-1 has lower held-out relative
+Frobenius error.  Report the full-parameter score for every seed and its
+mean/SEM, plus every secondary slice, the unweighted slice mean, and slice
+wins.  No significance claim is planned for three seeds.
 
 ## Mandatory checks and stopping rule
 
