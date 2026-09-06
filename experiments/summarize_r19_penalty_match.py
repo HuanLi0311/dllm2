@@ -31,6 +31,8 @@ def _stats(values) -> dict:
     return {
         "mean": statistics.fmean(values),
         "sem": statistics.stdev(values) / math.sqrt(len(values)),
+        "min": min(values),
+        "max": max(values),
         "values": values,
         "wins_below_zero": sum(value < 0 for value in values),
     }
@@ -38,6 +40,17 @@ def _stats(values) -> dict:
 
 def _without_timing(values: dict) -> dict:
     return {key: value for key, value in values.items() if key != "wall_time_seconds"}
+
+
+def _recomputed_endpoints(run: dict) -> dict:
+    task_a, task_b = run["protocol"]["task_sequence"]
+    learned_a = run["stages"][0]["metrics"][task_a]["loss"]
+    final = run["stages"][1]["metrics"]
+    return {
+        "final_average_loss": (final[task_a]["loss"] + final[task_b]["loss"]) / 2,
+        "past_task_forgetting": final[task_a]["loss"] - learned_a,
+        "final_task_loss": final[task_b]["loss"],
+    }
 
 
 def summarize(run_root: Path) -> dict:
@@ -88,6 +101,10 @@ def summarize(run_root: Path) -> dict:
         values = [*run["summary"].values(), *run["stages"][1]["training"].values()]
         if not all(not isinstance(value, float) or math.isfinite(value) for value in values):
             raise ValueError(f"non-finite endpoint: {path}")
+        recomputed = _recomputed_endpoints(run)
+        for endpoint, expected_value in recomputed.items():
+            if not math.isclose(run["summary"][endpoint], expected_value, rel_tol=1e-12, abs_tol=1e-12):
+                raise ValueError(f"summary endpoint recomputation failed: {path}: {endpoint}")
 
     for seed in SEEDS:
         reference = runs[("gd", 1.0, seed)]
@@ -120,6 +137,14 @@ def summarize(run_root: Path) -> dict:
             ])
             aggregate[str(clip)][method]["ewc_loss_mean"] = _stats([
                 runs[(method, clip, seed)]["stages"][1]["training"]["ewc_loss_mean"] for seed in SEEDS
+            ])
+            aggregate[str(clip)][method]["preclip_gradient_norm_max"] = _stats([
+                runs[(method, clip, seed)]["stages"][1]["training"]["gradient_norm_max"] for seed in SEEDS
+            ])
+            aggregate[str(clip)][method]["weighted_ewc_max"] = _stats([
+                runs[(method, clip, seed)]["stages"][1]["training"]["penalty_max"]
+                * runs[(method, clip, seed)]["stiffness_match"]["effective_lambda"]
+                for seed in SEEDS
             ])
 
     paired = {}
@@ -173,6 +198,8 @@ def summarize(run_root: Path) -> dict:
             "balanced_replay_verified": True,
             "weighted_trace_equality_verified": True,
             "within_seed_task_a_fisher_replay_identity_verified": True,
+            "summary_endpoints_recomputed_from_stage_metrics": True,
+            "task_b_mechanism_diagnostics_aggregated": True,
             "all_endpoints_finite": True,
         },
     }
@@ -183,6 +210,16 @@ def _self_check() -> None:
     assert stats["mean"] == 1 / 3 and stats["wins_below_zero"] == 1
     assert _clip_name(1.0) == "1" and _clip_name(1_000_000.0) == "1000000"
     assert _without_timing({"value": 3, "wall_time_seconds": 4}) == {"value": 3}
+    toy = {
+        "protocol": {"task_sequence": ["a", "b"]},
+        "stages": [
+            {"metrics": {"a": {"loss": 1.0}}},
+            {"metrics": {"a": {"loss": 2.5}, "b": {"loss": 0.5}}},
+        ],
+    }
+    assert _recomputed_endpoints(toy) == {
+        "final_average_loss": 1.5, "past_task_forgetting": 1.5, "final_task_loss": 0.5,
+    }
     print(json.dumps({"self_check": "ok"}))
 
 
