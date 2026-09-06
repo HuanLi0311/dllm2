@@ -348,7 +348,7 @@ def run(args) -> dict:
                 "kind": "diagonal", "reference": reference,
                 "diagonal": fisher["diagonal"].to(device),
             }
-    del fisher
+    del fisher, direction, diagonal
     args.clip = args.b_clip
     args.ewc_lambda = effective_lambda
     task_b_training = multitask._train_stage(

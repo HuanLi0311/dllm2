@@ -16,13 +16,15 @@ float32 normalization does not guarantee that the represented vector has
 exactly unit Euclidean norm.  The implemented rank-1 matrix is
 `alpha * u32 u32^T`, whose trace is therefore
 `alpha * ||u32||_2^2`, not merely `alpha`.  For every cell, the runner
-computes `s = ||u32||_2^2` from the stored tensor using a fixed-size chunked
-float64 sum, sets `tau = tr(D)`, fixes `lambda_D = 1000`, and sets
+computes `s = ||u32||_2^2` and `tau = tr(D32)` from the stored tensors using
+fixed-size chunked float64 sums, fixes `lambda_D = 1000`, and sets
 
 `lambda_R = 1000 * tau / (alpha * s)`.
 
-It records `s`, both unweighted traces, both multipliers, and both resulting
-weighted traces.  Non-positive or non-finite values fail closed.  This
+It retains the original float32-reduced diagonal statistic for the R16 anchor,
+but records its difference from the chunked float64 stored-tensor trace used
+for matching.  It also records `s`, both unweighted traces, both multipliers,
+and both resulting weighted traces.  Non-positive or non-finite values fail closed.  This
 matches implemented total stiffness, not directional stiffness or the
 penalty encountered at every optimization step.
 
@@ -60,9 +62,10 @@ training/Fisher anchors; checks 40 Fisher rows and 16/16/16/16 replay; binds
 source/input hashes; rejects existing output; recursively rejects non-finite
 results; and rechecks provenance before writing.
 
-The CPU self-check materializes a deliberately non-unit rank-1 direction,
-compares the chunked norm with a direct float64 computation, and verifies
-the corrected trace against explicit rank-1 and diagonal matrices.  A
+The CPU self-check materializes a deliberately non-unit rank-1 direction and
+a multi-chunk diagonal, compares both chunked reductions with direct float64
+computations, and verifies the corrected trace against explicit rank-1 and
+diagonal matrices.  A
 fail-closed summarizer independently recomputes endpoints and matching.
 
 Stop only for mechanical failure, OOM, timeout, non-finite output, failed

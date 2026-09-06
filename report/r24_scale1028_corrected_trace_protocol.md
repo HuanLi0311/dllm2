@@ -17,8 +17,8 @@ parameter of the 1.14B SMDM checkpoint?
   replay are identical to R23: 1,000 steps/task, batch 4, `5e-5`, 40 Fisher
   rows, and 64 replay rows balanced 16/16/16/16.
 - Matching uses the actual stored float32 direction.  Let
-  `s = ||u32||_2^2`, measured by fixed-size chunked float64 accumulation,
-  `tau = tr(D)`, and `lambda_D = 1000`.  Freeze
+  `s = ||u32||_2^2` and `tau = tr(D32)`, both measured from the stored
+  tensors by fixed-size chunked float64 accumulation, and `lambda_D = 1000`. Freeze
   `lambda_R = 1000 * tau / (alpha * s)`, so the implemented weighted traces
   `lambda_R * alpha * s` and `lambda_D * tau` are equal.
 - Task B uses canonical clip 1.  R24 does not cross scale with the no-clip
