@@ -1,13 +1,16 @@
 # R18 continual-task Fisher geometry protocol
 
-**Revision 2 frozen on 2026-09-07 before any successful R18 result.** This is
+**Revision 3 frozen on 2026-09-07 before any successful R18 result.** This is
 a new, exploratory run family.  It neither changes nor pools with the locked
 R16 submission matrix.  The revision-1 mechanical pilot completed its matrix
 calculation but failed the pre-write R16 anchor check: it accumulated the mean
 gradient in float64 rather than reproducing R16's operational float32 Fisher.
-That failed log is retained and supplies no result.  Revision 2 fixes the
-precision definition below; it does not change rows, masks, seeds, endpoints,
-or the completion rule.
+Revision 2 corrected the calibration Fisher, but its CPU self-check caught a
+mixed-precision held-out inner product before any GPU run.  Revision 3 keeps
+R16's operational float32 calibration tensors and scores their represented
+matrices against held-out gradients in float64.  Both failures are retained
+and supply no result.  Rows, masks, seeds, endpoints, and the completion rule
+have never changed.
 
 ## Question and claim boundary
 

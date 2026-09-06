@@ -32,7 +32,7 @@ def _stats(values) -> dict:
 def summarize(run_root: Path) -> dict:
     contract_path = run_root / "contract.json"
     contract = json.loads(contract_path.read_text())
-    if contract["status"] != "frozen_before_revision2_pilot" or contract["seeds"] != list(SEEDS):
+    if contract["status"] != "frozen_before_revision3_pilot" or contract["seeds"] != list(SEEDS):
         raise ValueError("unexpected R18 contract")
     expected = [run_root / "formal" / f"s{seed}.json" for seed in SEEDS]
     actual = sorted((run_root / "formal").glob("*.json"))
@@ -93,7 +93,7 @@ def summarize(run_root: Path) -> dict:
     result = {
         "schema_version": 1,
         "status": "ok",
-        "protocol": "r18_continual_fisher_geometry_v2",
+        "protocol": "r18_continual_fisher_geometry_v3",
         "run_count": len(runs),
         "contract_sha256": _sha256(contract_path),
         "run_sha256": {path.name: _sha256(path) for path in expected},
