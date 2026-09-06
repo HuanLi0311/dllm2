@@ -142,7 +142,7 @@ def summarize(family: str, run_root: Path) -> dict:
     if actual != set(expected.values()):
         raise ValueError(f"{family} grid mismatch: missing={set(expected.values()) - actual}, extra={actual - set(expected.values())}")
     runs = {cell: json.loads(path.read_text()) for cell, path in expected.items()}
-    input_reference = next(iter(runs.values()))["inputs"]
+    input_reference = contract["inputs"]
     contract_sha256 = _sha256(contract_path)
 
     for (method, clip, seed), run in runs.items():
@@ -176,6 +176,8 @@ def summarize(family: str, run_root: Path) -> dict:
             raise ValueError(f"checkpoint mismatch: {label}")
         if run["inputs"] != input_reference:
             raise ValueError(f"input artifacts differ: {label}")
+        if any(run["runtime"].get(key) != value for key, value in contract["environment"].items()):
+            raise ValueError(f"runtime environment differs from contract: {label}")
         if run["contract"] != {"path": f"runs/{config['run_dir']}/contract.json", "sha256": contract_sha256}:
             raise ValueError(f"run contract mismatch: {label}")
         if config["r16_anchors"]:

@@ -116,6 +116,18 @@ def _inputs(args, tasks) -> dict:
     }
 
 
+def _runtime() -> dict:
+    return {
+        "python": platform.python_version(), "torch": torch.__version__,
+        "transformers": importlib.metadata.version("transformers"),
+        "tokenizers": importlib.metadata.version("tokenizers"),
+        "safetensors": importlib.metadata.version("safetensors"),
+        "xformers": importlib.metadata.version("xformers"),
+        "python_no_user_site": os.environ.get("PYTHONNOUSERSITE"),
+        "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+    }
+
+
 def _clip_name(value: float) -> str:
     return "1" if value == 1.0 else "1000000"
 
@@ -205,16 +217,27 @@ def _assert_finite(value, path: str = "result") -> None:
             _assert_finite(item, f"{path}[{index}]")
 
 
-def _contract_guard(config: dict, dependencies: dict, checkpoint_sha256: str) -> tuple[Path, str]:
+def _contract_guard(family: str, config: dict, dependencies: dict, inputs: dict) -> tuple[Path, str]:
     path = ROOT / "runs" / config["run_dir"] / "contract.json"
     contract = json.loads(path.read_text())
-    if contract.get("status") != "frozen_before_pilot":
+    expected_grid = {
+        "methods": list(METHODS), "b_clip": list(config["clips"]),
+        "seeds": list(SEEDS), "cell_count": len(METHODS) * len(config["clips"]) * len(SEEDS),
+    }
+    if contract.get("status") != "frozen_before_pilot" or contract.get("family") != family:
         raise ValueError(f"unexpected contract status: {path}")
+    if contract.get("grid") != expected_grid:
+        raise ValueError(f"unexpected contract grid: {path}")
     for relative, digest in dependencies.items():
         if contract["sha256"].get(relative) != digest:
             raise ValueError(f"dependency outside frozen contract: {relative}")
-    if contract["sha256"].get("checkpoint") != checkpoint_sha256:
+    if contract["sha256"].get("checkpoint") != inputs["checkpoint_sha256"]:
         raise ValueError("checkpoint outside frozen contract")
+    if contract.get("inputs") != inputs:
+        raise ValueError("tokenizer/data/task artifacts are outside the frozen contract")
+    runtime = _runtime()
+    if any(runtime.get(key) != value for key, value in contract.get("environment", {}).items()):
+        raise ValueError("runtime environment is outside the frozen contract")
     return path, _sha256(path)
 
 
@@ -264,7 +287,7 @@ def run(args) -> dict:
         raise ValueError("unexpected task sequence")
     dependencies = _dependencies(config)
     inputs = _inputs(args, tasks)
-    contract_path, contract_sha256 = _contract_guard(config, dependencies, inputs["checkpoint_sha256"])
+    contract_path, contract_sha256 = _contract_guard(args.family, config, dependencies, inputs)
 
     model = load_model(args, device)
     parameters = trainable_parameters(model, "all")
@@ -378,15 +401,7 @@ def run(args) -> dict:
         "created_utc": _utc_now(),
         "wall_time_seconds": time.monotonic() - started,
         "host": os.uname().nodename,
-        "runtime": {
-            "python": platform.python_version(), "torch": torch.__version__,
-            "transformers": importlib.metadata.version("transformers"),
-            "tokenizers": importlib.metadata.version("tokenizers"),
-            "safetensors": importlib.metadata.version("safetensors"),
-            "xformers": importlib.metadata.version("xformers"),
-            "python_no_user_site": os.environ["PYTHONNOUSERSITE"],
-            "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
-        },
+        "runtime": _runtime(),
         "dependencies": dependencies,
         "contract": {"path": str(contract_path.relative_to(ROOT)), "sha256": contract_sha256},
         "inputs": inputs,
@@ -425,7 +440,7 @@ def run(args) -> dict:
         raise RuntimeError("source/protocol provenance changed during run")
     if _inputs(args, tasks) != inputs:
         raise RuntimeError("input provenance changed during run")
-    final_contract_path, final_contract_sha256 = _contract_guard(config, dependencies, inputs["checkpoint_sha256"])
+    final_contract_path, final_contract_sha256 = _contract_guard(args.family, config, dependencies, inputs)
     if (final_contract_path, final_contract_sha256) != (contract_path, contract_sha256):
         raise RuntimeError("contract changed during run")
     args.output.parent.mkdir(parents=True, exist_ok=True)
