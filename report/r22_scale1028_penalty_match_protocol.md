@@ -23,8 +23,9 @@ stream updates every parameter of the 1.14B SMDM checkpoint?
   `kappa=1000*tau`, and `lambda_R1=kappa/alpha`.  Thus
   `lambda_R1*alpha=lambda_D*tau`; a non-positive/non-finite value fails.
 - Task B: 1,000 steps with clip 1.  The no-clip branch is deliberately not
-  repeated at scale: R19 already isolates clipping, while the R21 smoke saw
-  a Task-B pre-clip maximum of 270,336 and clipping on every step.
+  repeated at scale: R19 isolates clipping at 219M, whereas R22 isolates scale
+  under the canonical R16 clip.  Crossing both factors would double the grid
+  and answer a different question.
 - Methods: GD, Rank-1+GD, Diagonal+GD.  Seeds: 3407, 3408, 3409.  Total: nine
   cells.  Seed 3407 is the three-method mechanical subset; after it passes,
   all six remaining cells run unchanged regardless of numerical direction.
