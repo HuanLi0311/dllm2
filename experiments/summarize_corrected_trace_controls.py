@@ -310,6 +310,7 @@ def _self_check() -> None:
     }
     alpha, norm_sq, diagonal_trace = 2.5, 25.0, 5.1875
     target = 1_000.0 * diagonal_trace
+    reported_trace = diagonal_trace + 1e-7
     trace_run = {
         "fisher": {"rank1_coefficient": alpha},
         "stiffness_match": {
@@ -320,9 +321,9 @@ def _self_check() -> None:
             "weighted_trace_target": target,
             "matched_lambdas": {"rank1": target / (alpha * norm_sq), "diagonal": 1_000.0},
             "weighted_trace_checks": {"rank1": target, "diagonal": target},
-            "diagonal_trace_float32_reported": diagonal_trace + 1e-7,
+            "diagonal_trace_float32_reported": reported_trace,
             "diagonal_trace_float64_chunked": diagonal_trace,
-            "diagonal_trace_reported_relative_difference": 1e-7 / diagonal_trace,
+            "diagonal_trace_reported_relative_difference": abs(diagonal_trace - reported_trace) / diagonal_trace,
             "stored_tensor_dtype": "torch.float32", "stored_tensor_device": "cpu",
         },
     }
