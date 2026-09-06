@@ -62,4 +62,5 @@ Stop and diagnose on OOM, a non-finite quantity, failed invariant, or changed
 provenance.  Numerical results never trigger early stopping or condition
 selection.  All successful and failed attempts remain in the R18 directory.
 Only a complete independently recomputed three-seed summary may be considered
-for the appendix, and only with the exploratory/slice-limited scope above.
+for the appendix, and only with the exploratory, one-task/checkpoint-limited
+scope above.

@@ -23,8 +23,8 @@ if str(ROOT) not in sys.path:
 from continual_benchmark import encode_benchmark_rows  # noqa: E402
 from continual_mdm import load_model, set_seed, trainable_parameters  # noqa: E402
 from continual_reverse import fact_rows  # noqa: E402
-from experiments import dllm_rank1_multitask as multitask  # noqa: E402
-from experiments import dllm_rank1_transfer as transfer  # noqa: E402
+import dllm_rank1_multitask as multitask  # noqa: E402
+import dllm_rank1_transfer as transfer  # noqa: E402
 
 
 PROTOCOL = ROOT / "report/r18_continual_fisher_geometry_protocol.md"
@@ -368,6 +368,8 @@ def _dependencies() -> dict[str, str]:
 
 def run(args) -> dict:
     started = time.monotonic()
+    if args.output.exists():
+        raise FileExistsError(f"refusing to overwrite existing output: {args.output}")
     if args.seed not in (3407, 3408, 3409):
         raise ValueError("R18 seeds are frozen to 3407, 3408, and 3409")
     set_seed(args.seed)
@@ -592,6 +594,24 @@ def _self_check() -> None:
     diagonal_error = torch.linalg.matrix_norm(ftest - diagonal) / torch.linalg.matrix_norm(ftest)
     assert math.isclose(actual["rank1_relative_frobenius_error"], float(rank1_error), rel_tol=1e-10)
     assert math.isclose(actual["diagonal_relative_frobenius_error"], float(diagonal_error), rel_tol=1e-10)
+    streamed = _geometry_from_sufficient(
+        gc.double().mean(dim=0),
+        gc.double().square().mean(dim=0),
+        float((gc.double() @ gc.double().mean(dim=0)).square().mean()),
+        gt.double().square().mean(dim=0),
+        float((gt.double() @ gc.double().mean(dim=0)).square().mean()),
+        gt.double() @ gt.double().T,
+        len(gc),
+        len(gt),
+    )
+    for key in (
+        "rank1_relative_frobenius_error",
+        "diagonal_relative_frobenius_error",
+        "heldout_score_log_diag_over_rank1",
+        "heldout_direction_oracle_error",
+        "heldout_best_rank1_error",
+    ):
+        assert math.isclose(streamed[key], actual[key], rel_tol=1e-10, abs_tol=1e-12), key
 
     class ToyModel(torch.nn.Module):
         def __init__(self):
@@ -605,10 +625,11 @@ def _self_check() -> None:
 
     row = {"ids": [1, 2, 3], "answer_start": 1, "answer_end": 3}
     model = ToyModel()
+    assert multitask._sft_losses is transfer._sft_losses
     first = torch.Generator().manual_seed(19)
     second = torch.Generator().manual_seed(19)
     audited, audit = _audited_sft_loss(model, row, 0, torch.device("cpu"), first, 1e-3, 1.0)
-    direct = transfer._sft_losses(model, [row], 0, torch.device("cpu"), second, 1e-3, 1.0)[0]
+    direct = multitask._sft_losses(model, [row], 0, torch.device("cpu"), second, 1e-3, 1.0)[0]
     assert torch.equal(audited, direct)
     assert audit["answer_tokens"] == 2 and 0 <= audit["masked_tokens"] <= 2
     print(json.dumps({"self_check": "ok"}))
