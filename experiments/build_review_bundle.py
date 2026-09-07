@@ -8,11 +8,12 @@ import gzip
 import hashlib
 import json
 import tarfile
+import tempfile
 from pathlib import Path
 
 
 ROOT = Path(__file__).parents[1].resolve()
-FORBIDDEN = (b"/" b"home/",)
+FORBIDDEN = (b"/" b"home/", b"air-node", b"JJ_Group", b"lih2511")
 
 
 def _sha256_bytes(value):
@@ -32,6 +33,8 @@ def _archive_has_forbidden(path):
         return False
     with tarfile.open(path, "r:gz") as archive:
         for member in archive.getmembers():
+            if _has_forbidden(member.name.encode()):
+                return True
             if member.isfile():
                 handle = archive.extractfile(member)
                 if handle is None or _has_forbidden(handle.read()):
@@ -40,8 +43,8 @@ def _archive_has_forbidden(path):
 
 
 def _clean_string(value, code_root=None, host=None):
-    if host and value == host:
-        return "anonymized-gpu-node"
+    if host:
+        value = value.replace(host, "anonymized-gpu-node")
     value = value.replace(str(ROOT) + "/", "")
     if code_root:
         value = value.replace(code_root, "external/SMDM")
@@ -131,19 +134,125 @@ def build(submission_manifest, output_dir, public_artifacts):
     return output, result
 
 
+def _root_path(relative):
+    path = (ROOT / relative).resolve()
+    try:
+        path.relative_to(ROOT)
+    except ValueError as error:
+        raise ValueError(f"artifact escapes repository root: {relative}") from error
+    return path
+
+
+def _check_hash(path, expected, label):
+    if not path.is_file():
+        raise ValueError(f"missing {label}: {path}")
+    actual = _sha256(path)
+    if actual != expected:
+        raise ValueError(f"hash mismatch for {label}: {path}: {actual} != {expected}")
+
+
+def _check_released_payload(path):
+    if path.name.endswith(".json.gz"):
+        with gzip.open(path, "rb") as handle:
+            data = handle.read()
+        if _has_forbidden(data):
+            raise ValueError(f"identity-bearing string in expanded artifact: {path}")
+        json.loads(data)
+        return
+    data = path.read_bytes()
+    if _has_forbidden(data) or _archive_has_forbidden(path):
+        raise ValueError(f"identity-bearing string in public artifact: {path}")
+
+
+def verify(release_manifest):
+    release_manifest = release_manifest.resolve()
+    manifest_bytes = release_manifest.read_bytes()
+    if _has_forbidden(manifest_bytes):
+        raise ValueError(f"identity-bearing string in release manifest: {release_manifest}")
+    manifest = json.loads(manifest_bytes)
+    if manifest.get("status") != "ok":
+        raise ValueError("release manifest status is not ok")
+
+    source_manifest = manifest["submission_manifest"]
+    _check_hash(_root_path(source_manifest["path"]), source_manifest["sha256"], "submission manifest")
+    bundle_root = release_manifest.parent
+    expected_bundle_files = {release_manifest}
+    checked = 0
+
+    for section in ("raw_artifacts", "sanitized_public_artifacts"):
+        for artifact in manifest.get(section, []):
+            _check_hash(_root_path(artifact["internal_artifact"]), artifact["internal_sha256"], "internal artifact")
+            released = _root_path(artifact["release_artifact"])
+            try:
+                released.relative_to(bundle_root)
+            except ValueError as error:
+                raise ValueError(f"released artifact escapes bundle: {released}") from error
+            _check_hash(released, artifact["release_sha256"], "released artifact")
+            _check_released_payload(released)
+            expected_bundle_files.add(released)
+            checked += 1
+
+    for artifact in manifest.get("public_artifacts", []):
+        path = _root_path(artifact["path"])
+        _check_hash(path, artifact["sha256"], "public artifact")
+        _check_released_payload(path)
+        checked += 1
+
+    actual_bundle_files = {path.resolve() for path in bundle_root.rglob("*") if path.is_file()}
+    if actual_bundle_files != expected_bundle_files:
+        raise ValueError(
+            f"bundle file-set mismatch: missing={expected_bundle_files - actual_bundle_files}, "
+            f"extra={actual_bundle_files - expected_bundle_files}"
+        )
+    return {"status": "ok", "checked_artifacts": checked, "bundle_files": len(actual_bundle_files)}
+
+
+def _self_check():
+    host = "air-" + "node-03"
+    sample = _clean(
+        {"host": host, "path": "/" + "home/group/user/env/bin/python"}, host=host
+    )
+    encoded = json.dumps(sample).encode()
+    assert not _has_forbidden(encoded) and _has_forbidden(("/" + "home/user").encode())
+    with tempfile.TemporaryDirectory(prefix="bundle_self_check_", dir=ROOT / "runs") as temporary:
+        temporary = Path(temporary)
+        source = temporary / "source.json"
+        source.write_text(json.dumps({"status": "ok", "host": host, "path": "/" + "home/user/input"}))
+        submission = temporary / "submission.json"
+        submission.write_text(json.dumps({
+            "geometry_artifacts": [{
+                "path": str(source.relative_to(ROOT)), "sha256": _sha256(source),
+            }]
+        }))
+        release_manifest, _ = build(submission, temporary / "bundle", [])
+        result = verify(release_manifest)
+        assert result == {"status": "ok", "checked_artifacts": 1, "bundle_files": 2}
+        released = next((temporary / "bundle" / "raw").rglob("*.json.gz"))
+        original = released.read_bytes()
+        released.write_bytes(original + b"tamper")
+        try:
+            verify(release_manifest)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("bundle verifier accepted a modified artifact")
+    print(json.dumps({"self_check": "ok", "bundle_verify": "ok", "tamper_rejected": True}))
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--submission-manifest", type=Path)
     parser.add_argument("--output-dir", type=Path, default=Path("paper/review_bundle"))
     parser.add_argument("--public", type=Path, nargs="*", default=[])
+    parser.add_argument("--verify", type=Path)
     parser.add_argument("--self-check", action="store_true")
     args = parser.parse_args(argv)
     if args.self_check:
-        host = "air-" + "node-03"
-        sample = _clean({"host": host, "path": str(ROOT / "runs/x.json"), "python": "/" + "home/group/user/env/bin/python"}, host=host)
-        encoded = json.dumps(sample).encode()
-        assert not _has_forbidden(encoded) and _has_forbidden(("/" + "home/user").encode())
-        print(json.dumps({"self_check": "ok"}))
+        _self_check()
+        return
+    if args.verify:
+        manifest = args.verify / "release_manifest.json" if args.verify.is_dir() else args.verify
+        print(json.dumps(verify(manifest)))
         return
     if not args.submission_manifest:
         parser.error("--submission-manifest is required")

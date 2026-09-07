@@ -165,6 +165,7 @@ python experiments/run_audited_geometry_probe.py --self-check
 python experiments/make_paper_figures.py --self-check
 python experiments/build_submission_manifest.py --self-check
 python experiments/build_review_bundle.py --self-check
+python experiments/build_review_bundle.py --verify release_evidence/release_manifest.json
 python experiments/qwen_rank1_geometry.py --self-check
 python experiments/qwen_continual_transfer.py --self-check
 python experiments/summarize_qwen_continual_transfer.py self-check
