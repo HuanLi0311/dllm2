@@ -245,10 +245,11 @@ and non-finite metrics. It recomputes endpoints from stage-level raw values.
   artifacts and a SHA-256 manifest.
 - [release_extension_evidence](release_extension_evidence): 34 de-identified
   R18/R23/R24 raw and summary artifacts with a separately verified manifest.
-- [runs/r18_continual_fisher_geometry](runs/r18_continual_fisher_geometry):
-  full-parameter continual-task Fisher geometry and absolute diagnostics.
-- [runs/r23_corrected_trace](runs/r23_corrected_trace) and
-  [runs/r24_scale1028_corrected_trace](runs/r24_scale1028_corrected_trace):
+- [R18 continual-Fisher summary](release_extension_evidence/raw/runs/r18_continual_fisher_geometry/summary.json.gz)
+  and [absolute diagnostics](release_extension_evidence/raw/runs/r18_continual_fisher_geometry/absolute_diagnostics.json.gz):
+  full-parameter continual-task Fisher geometry.
+- [R23 summary](release_extension_evidence/raw/runs/r23_corrected_trace/summary.json.gz)
+  and [R24 summary](release_extension_evidence/raw/runs/r24_scale1028_corrected_trace/summary.json.gz):
   complete 219M and 1.14B implemented weighted-trace controls.
 - [runs/r16_native_mask](runs/r16_native_mask): compact validation, main, and
   fresh-fact DLLM summaries.
