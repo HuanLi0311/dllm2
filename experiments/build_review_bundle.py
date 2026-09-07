@@ -172,6 +172,9 @@ def verify(release_manifest, require_internal=False):
     manifest = json.loads(manifest_bytes)
     if manifest.get("status") != "ok":
         raise ValueError("release manifest status is not ok")
+    builder_script_matches = manifest.get("bundle_script_sha256") == _sha256(__file__)
+    if require_internal and not builder_script_matches:
+        raise ValueError("bundle builder differs from the release manifest")
 
     source_manifest = manifest["submission_manifest"]
     _check_hash(_root_path(source_manifest["path"]), source_manifest["sha256"], "submission manifest")
@@ -227,6 +230,7 @@ def verify(release_manifest, require_internal=False):
         "internal_sources_checked": internal_sources_checked,
         "missing_internal_sources": missing_internal_sources,
         "changed_internal_sources": changed_internal_sources,
+        "builder_script_matches": builder_script_matches,
         "bundle_files": len(actual_bundle_files),
     }
 
@@ -254,6 +258,7 @@ def _self_check():
             "status": "ok", "checked_artifacts": 1,
             "internal_sources_checked": 1, "missing_internal_sources": 0,
             "changed_internal_sources": 0,
+            "builder_script_matches": True,
             "bundle_files": 2,
         }
         released = next((temporary / "bundle" / "raw").rglob("*.json.gz"))
