@@ -277,6 +277,8 @@ def main(argv=None):
     parser.add_argument("--require-internal", action="store_true")
     parser.add_argument("--self-check", action="store_true")
     args = parser.parse_args(argv)
+    if args.require_internal and not args.verify:
+        parser.error("--require-internal requires --verify")
     if args.self_check:
         _self_check()
         return
