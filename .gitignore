@@ -13,6 +13,7 @@ __pycache__/
 /runs/*
 !/runs/commands.md
 !/runs/submission_manifest.json
+!/runs/extension_evidence_manifest.json
 !/runs/data/
 /runs/data/*
 !/runs/data/geometry_corpora.jsonl

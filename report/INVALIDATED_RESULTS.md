@@ -1,6 +1,6 @@
 # Evidence invalidation ledger
 
-**Effective 2026-09-05. This ledger overrides every older report in this directory.**
+**Effective 2026-09-07. This ledger overrides every older report in this directory.**
 
 ## Excluded artifacts
 
@@ -14,11 +14,14 @@
 | All `runs/r14_continual_transfer/*` and `runs/r15_multitask_transfer/*` | Invalid | Answer corruption forced the first answer token to be masked whenever an independent Bernoulli mask was empty, changing that token's marginal probability while retaining the `1/t` importance weight. Current/replay minibatches also shared one Python RNG, so GD consumed extra draws and changed current-task exposure. R16 restores independent Bernoulli masks (including empty masks), uses separate RNGs, and reruns every reported continual result. |
 | `runs/r15_multitask_transfer/forward/*` (outside `final/`) | Invalid pilot | Evaluation mask seeds depended on training stage, so learned-time and final losses were not exactly paired. R16 uses task-identity masks. |
 | `runs/r15_multitask_transfer/invalid_unbalanced_replay_20260829/*` | Invalid pilot | GD selected the first 64 training rows from data grouped by fact, producing replay counts 30/30/4/0. Because Fisher covered all four facts, this could create an artificial EWC advantage on facts omitted by replay. R16 uses 16/16/16/16 replay and audits per-fact hashes. |
+| `runs/r19_penalty_match/*` | Invalid, incomplete control | The nominal rank-1 trace omitted the represented stored direction's non-unit norm; the diagonal target also relied on a long float32 reduction. R23 replaces both sides with fixed-chunk float64 reductions of the stored tensors. Completed R19 outputs are retained but never pooled or reported. See `report/r19_nominal_trace_invalidation.md`. |
+| `runs/r22_scale1028_penalty_match/*` | Invalid, stopped control | This 1.14B family inherited R19's nominal-trace mismatch. Only the already-running mechanical subset completed; R24 independently reruns the full corrected grid. See `report/r22_nominal_trace_invalidation.md`. |
+| `runs/r21_scale1028_full_smoke/*` | Feasibility only | This 100-step mechanical smoke established memory/runtime feasibility for full-parameter 1.14B training. Its endpoints were never registered as evidence and are excluded from the paper and extension release. |
 | `paper/figures_insample_audit/*` | Appendix audit only | These figures visualize corrected same-sample measurements, not generalization to an independent Fisher. |
 
-The source release omits these invalid raw files; this ledger preserves their
-failure history. They must not be pooled with or cited as support for the
-submission's empirical claims.
+The primary and extension releases omit these invalid raw files; this ledger
+preserves their failure history. They must not be pooled with or cited as
+support for the submission's empirical claims.
 
 ## Replacement evidence
 
@@ -35,6 +38,9 @@ The submission uses only:
 - `runs/r08_split_primary/isotropic_null_full.json`: 200-repetition isotropic null at the two measured parameter-slice dimensions; and
 - `runs/r16_native_mask/validation/*` and `runs/r16_native_mask/confirmation/*`: three-seed lambda selection and a separate-fact confirmation using the native masking estimator;
 - the exact 33-file matrix under `runs/r16_native_mask/final/` plus the 24-file core-method matrix on previously unused facts 24--29 under `runs/r16_native_mask/fresh/`; `experiments/summarize_dllm_rank1_multitask.py` has verified both complete two-order protocols and emitted their R16 summaries; and
+- `runs/r18_continual_fisher_geometry/formal/*`: three full-parameter, post-Task-A answer-only Fisher measurements, plus the frozen and absolute-diagnostics summaries;
+- `runs/r23_corrected_trace/formal/*`: the complete 18-cell 219M implemented weighted-trace and clipping control;
+- `runs/r24_scale1028_corrected_trace/formal/*`: the complete nine-cell full-parameter 1.14B implemented weighted-trace scale extension; and
 - the analytic scaled-identity Gaussian counterexample checked by `experiments/simulate_fisher_null.py --self-check`.
 
 Every primary geometry row is split-sample. Surrogate coefficients and

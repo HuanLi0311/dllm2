@@ -13,6 +13,7 @@ diffusion language models (DLLMs). It separates three questions:
 
 Documentation: [locked R16 protocol](report/r16_protocol.md) ·
 [Qwen3 scale extension](report/qwen_continual_scale_results.md) ·
+[full-parameter Fisher controls](report/r23_corrected_trace_protocol.md) ·
 [invalidation ledger](report/INVALIDATED_RESULTS.md)
 
 ## Findings
@@ -39,11 +40,24 @@ Documentation: [locked R16 protocol](report/r16_protocol.md) ·
   \(2.168\pm0.390\) to \(0.891\pm0.215\) reverse. Rank-1+GD minus GD is
   \(-0.132\pm0.603\) and \(-0.285\pm0.214\): favorable means, but only two
   of three paired seeds in either order and substantial heterogeneity.
-- On the locked 24-run fresh-fact matrix, Rank-1+GD minus GD is
+- On the prelocked 24-run fresh-fact sensitivity extension, Rank-1+GD minus GD is
   \(+0.063\pm0.125\) forward and \(-0.067\pm0.048\) reverse, so the mean
   changes sign with order. Rank-1+GD nevertheless beats the selected
   Diagonal+GD recipe in all six fresh-fact pairs. This is a local recipe
   comparison, not evidence for a modality-wide rank-1 mechanism.
+- On actual post-Task-A answer-only gradients over all 219M parameters, both
+  calibration-fitted Fisher surrogates have held-out relative error essentially
+  one. The held-out Fisher's own best rank-1 error is (0.446\pm0.064), while
+  the calibration-direction oracle remains (0.999995\pm0.000003): the
+  direction and scale, rather than low rank in the test Fisher itself, fail to
+  transfer.
+- In the 18-cell 219M implemented weighted-trace control, the canonical-clip
+  Rank-1+GD minus Diagonal+GD final-loss difference is
+  (+0.001\pm0.052); the inactive-clip difference is
+  (-0.005\pm0.031). In the nine-cell full-parameter 1.14B extension it is
+  (+0.080\pm0.070), with every seed favoring diagonal, but the matched trace
+  target varies (2.57\times10^5)-fold across seeds. These are exploratory
+  results on one two-task factual stream, not a superiority claim.
 - In the last-block Qwen3 extension at 0.6B, 1.7B, and 4B, GD lowers final
   loss and forgetting versus Sequential in all nine paired runs. Rank-1+GD
   raises final loss versus GD in all nine because it impairs later-task
@@ -54,7 +68,9 @@ Both fail-closed matrices are complete and pass strict audit: 33/33 main runs
 and 24/24 fresh-fact runs. Their summaries are
 <code>runs/r16_native_mask/{summary,fresh_summary}.json</code>. Compact final
 summaries stay readable in <code>runs/</code>; de-identified compressed raw
-envelopes and their hashes are in [release_evidence](release_evidence).
+envelopes and their hashes are in [release_evidence](release_evidence). The
+separate [release_extension_evidence](release_extension_evidence) bundle holds
+only the valid R18/R23/R24 continual-Fisher extensions.
 
 ## What is measured
 
@@ -111,7 +127,7 @@ report GSM8K solving accuracy or MT-Bench judge scores.
 | Evaluation | 32 independent mask replicates per test template |
 | Replay | 64 generated completions per old task, exactly balanced by fact |
 | Fisher | 10 examples/fact |
-| Selected coefficients | Rank-1 <code>1e5</code>; diagonal <code>1e3</code>; GD weight 1 |
+| Selected EWC multipliers | Rank-1 <code>1e5</code>; diagonal <code>1e3</code>; GD weight 1 |
 | Seeds | 3407, 3408, 3409 |
 | Main matrix | Four tasks, exact reverse order, 33 runs |
 | Fresh matrix | Three unseen-fact tasks, exact reverse order, 24 runs |
@@ -166,6 +182,12 @@ python experiments/make_paper_figures.py --self-check
 python experiments/build_submission_manifest.py --self-check
 python experiments/build_review_bundle.py --self-check
 python experiments/build_review_bundle.py --verify release_evidence/release_manifest.json
+python experiments/build_review_bundle.py --verify release_extension_evidence/release_manifest.json --require-internal
+python experiments/dllm_continual_fisher_geometry.py --self-check
+python experiments/summarize_r18_continual_fisher_geometry.py --self-check
+python experiments/summarize_r18_absolute_diagnostics.py --self-check
+python experiments/dllm_corrected_trace_control.py --self-check
+python experiments/summarize_corrected_trace_controls.py --self-check
 python experiments/qwen_rank1_geometry.py --self-check
 python experiments/qwen_continual_transfer.py --self-check
 python experiments/summarize_qwen_continual_transfer.py self-check
@@ -218,6 +240,13 @@ and non-finite metrics. It recomputes endpoints from stage-level raw values.
 
 - [release_evidence](release_evidence): 315 de-identified compressed run
   artifacts and a SHA-256 manifest.
+- [release_extension_evidence](release_extension_evidence): 34 de-identified
+  R18/R23/R24 raw and summary artifacts with a separately verified manifest.
+- [runs/r18_continual_fisher_geometry](runs/r18_continual_fisher_geometry):
+  full-parameter continual-task Fisher geometry and absolute diagnostics.
+- [runs/r23_corrected_trace](runs/r23_corrected_trace) and
+  [runs/r24_scale1028_corrected_trace](runs/r24_scale1028_corrected_trace):
+  complete 219M and 1.14B implemented weighted-trace controls.
 - [runs/r16_native_mask](runs/r16_native_mask): compact validation, main, and
   fresh-fact DLLM summaries.
 - [runs/qwen_continual_scale](runs/qwen_continual_scale): compact Qwen3
@@ -230,13 +259,16 @@ and non-finite metrics. It recomputes endpoints from stage-level raw values.
 
 ## Scope
 
-The geometry audit samples selected parameter slices rather than the full
-Fisher. The confirmatory continual study covers one 219M checkpoint,
-controlled factual associations, and three optimization seeds. The Qwen3
-extension changes model family, objective, and trainable fraction. The two DLLM
-task orders are sensitivity analyses, not independent replications. Separately
-selected EWC coefficients compare fixed recipes but do not equalize effective
-stiffness, and the methods are not FLOP-matched. Retaining old prompts also
-makes GD conditional replay, not data-free generation.
+The broad packed-text geometry audit samples selected parameter slices. The
+separate R18 diagnostic uses actual answer-only gradients over all 219M
+parameters but only one learned task and checkpoint. The confirmatory continual
+study covers one 219M checkpoint, controlled factual associations, and three
+optimization seeds. R23 and R24 are exploratory two-task controls; even their
+matched implemented weighted traces do not match directional stiffness,
+parameter displacement, or the penalty encountered along a trajectory. The
+Qwen3 extension changes model family, objective, and trainable fraction. The
+two DLLM task orders are sensitivity analyses, not independent replications,
+and the methods are not FLOP-matched. Retaining old prompts also makes GD
+conditional replay, not data-free generation.
 
 See [NOTICE.md](NOTICE.md) for upstream attribution and licenses.

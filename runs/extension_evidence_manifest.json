@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "status": "ok",
+  "role": "continual_fisher_extension_evidence",
+  "scope": {
+    "included": [
+      "R18 valid full-parameter continual-task Fisher geometry",
+      "R23 valid 219M corrected weighted-trace controls",
+      "R24 valid 1.14B corrected weighted-trace controls"
+    ],
+    "excluded": [
+      "R19 nominal-trace invalidated",
+      "R21 feasibility-only endpoints",
+      "R22 nominal-trace invalidated"
+    ]
+  },
+  "geometry_artifacts": [
+    {
+      "path": "runs/r18_continual_fisher_geometry/absolute_diagnostics.json",
+      "sha256": "fda008a3a2bb1e7f11eed95bdb548fb285e6dcc4b28f574e630b494638be73b4"
+    },
+    {
+      "path": "runs/r18_continual_fisher_geometry/formal/s3407.json",
+      "sha256": "323e75aca81882d87e1d526eb72f547c8d762394d3d9e4d66ac70c37bb047712"
+    },
+    {
+      "path": "runs/r18_continual_fisher_geometry/formal/s3408.json",
+      "sha256": "354e8f80845cafa29b311486704861d0cfec68896dd6012671ae7a56512c27a6"
+    },
+    {
+      "path": "runs/r18_continual_fisher_geometry/formal/s3409.json",
+      "sha256": "26ac690c357321edf1051f7f20ae40ba82c65940abf0cc681a754cba6f5e697c"
+    },
+    {
+      "path": "runs/r18_continual_fisher_geometry/summary.json",
+      "sha256": "73f17744a4c899033fabf222b66d4b3f433cf2dd8beb0180543a54bdcdd7ffae"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/diag_gd_clip1_s3407.json",
+      "sha256": "e858b2da2ccff6764cc4c3d85318f152cc763246826aab2eb0442f39f79e728e"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/diag_gd_clip1_s3408.json",
+      "sha256": "bfe2eeeaac513e894030b2fb062b28d9e86fae84c82ed26f675ca97c21e255ce"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/diag_gd_clip1_s3409.json",
+      "sha256": "a90a298707e4440de2875dcec0135dfdfab6d42d4817b981e70e9353efd31120"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/diag_gd_clip1000000_s3407.json",
+      "sha256": "692ab96392657755087fccc2b9b209ac03e0852b92d28fa79f10093cade1994a"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/diag_gd_clip1000000_s3408.json",
+      "sha256": "f0a69281ac4d309f4a6f8cdd9b977424c2326ae1e1c4167a5f0bd80ab589757a"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/diag_gd_clip1000000_s3409.json",
+      "sha256": "fabfbaf13ce520102ba2078d572e378f9b1f9ee32de2fd3ed023cbf09c12db1f"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/gd_clip1_s3407.json",
+      "sha256": "5dfeb0f29f68a35392b6dad1a56f6f75bf2abf24e37b58cba8d3ba50bcec8b95"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/gd_clip1_s3408.json",
+      "sha256": "50bbbfce7da3f90e6f13703f77133d9f919d21aaff406de93bf068230c2bfaa6"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/gd_clip1_s3409.json",
+      "sha256": "790d52670e88420fd3f41bcce82a684db817febd7c2d012dee8bb78db8002b5a"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/gd_clip1000000_s3407.json",
+      "sha256": "361cd7d70873658089492a7d0977c778e90e41d202d6800816fb0e14cb3fb2e4"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/gd_clip1000000_s3408.json",
+      "sha256": "a569ecbd324a854555f9f818bb8cd54278369e42bdc2cad635e0c5f573d2e41b"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/gd_clip1000000_s3409.json",
+      "sha256": "eb9a5617b9b5b08bfca5749c960bf3f2288d9ed8c7afb439ee9ec45b2c647e7b"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/rank1_gd_clip1_s3407.json",
+      "sha256": "5104245784c55cb16a0b3c9975ca758089c1181f075be62cf02296eaaf6be764"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/rank1_gd_clip1_s3408.json",
+      "sha256": "ea6bb0f4ebeb7b9ae466c9502aef7839cf21f4d2ec4906fdc94b7db482900076"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/rank1_gd_clip1_s3409.json",
+      "sha256": "28296cccac764a413c46b79c0650bf4089016408b0a4207f72e5cdf5f4c49b33"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/rank1_gd_clip1000000_s3407.json",
+      "sha256": "aba8458e903004fbccf1c206ed2c6b881f2dadf93eb9d792e3be691774456588"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/rank1_gd_clip1000000_s3408.json",
+      "sha256": "51f063e80631229e2bfe7d0ff109a90dd98673da71b043250a44475ec5aaa4a6"
+    },
+    {
+      "path": "runs/r23_corrected_trace/formal/rank1_gd_clip1000000_s3409.json",
+      "sha256": "9b889edf99edc72bb5a4652cba357e7aebd71bbb76907218cd60fa1abf2d4a98"
+    },
+    {
+      "path": "runs/r23_corrected_trace/summary.json",
+      "sha256": "02d40caed13f0a45db86cc77c7082221f4010cd62380ac5650db5c30bd8b8ce1"
+    },
+    {
+      "path": "runs/r24_scale1028_corrected_trace/formal/diag_gd_s3407.json",
+      "sha256": "bd2c30ccaa6386d4d1b5ec0ce3af0f4a442edb527ca0cf1df8ef24e8270d40c1"
+    },
+    {
+      "path": "runs/r24_scale1028_corrected_trace/formal/diag_gd_s3408.json",
+      "sha256": "b6b79db1338ecc12f26b801e4f2859f7e4082c0e75aa90cdf508e5dc92751899"
+    },
+    {
+      "path": "runs/r24_scale1028_corrected_trace/formal/diag_gd_s3409.json",
+      "sha256": "8abc08b50508c0f4e20939bad069797eb3537a411a4bdbc93438f7a7c566f622"
+    },
+    {
+      "path": "runs/r24_scale1028_corrected_trace/formal/gd_s3407.json",
+      "sha256": "23bb3ce819c0c5ec7f3df148c3816ba00f8c58a536f7f52862355701431076d7"
+    },
+    {
+      "path": "runs/r24_scale1028_corrected_trace/formal/gd_s3408.json",
+      "sha256": "1c4528153b675570a6b9f8b4f986639ae628d852b864188955c2f21afa19a15a"
+    },
+    {
+      "path": "runs/r24_scale1028_corrected_trace/formal/gd_s3409.json",
+      "sha256": "dd259a729b8088d1bca6ad0a779a655dfc5f7634a7e6d108fa952f2f1b43dbc3"
+    },
+    {
+      "path": "runs/r24_scale1028_corrected_trace/formal/rank1_gd_s3407.json",
+      "sha256": "0fe612978ddb8746905d00c07c7587451dae29f7a6813bd6e6f6aff7bda191d5"
+    },
+    {
+      "path": "runs/r24_scale1028_corrected_trace/formal/rank1_gd_s3408.json",
+      "sha256": "5aa77f7a2cc49d34e2bda3915bfba69c979609c3bd212063ee8e127a0a307811"
+    },
+    {
+      "path": "runs/r24_scale1028_corrected_trace/formal/rank1_gd_s3409.json",
+      "sha256": "a71873c1ffe0f70f8d5933048086b597b7d35735c0e4b86e0d6e0c073fb930c6"
+    },
+    {
+      "path": "runs/r24_scale1028_corrected_trace/summary.json",
+      "sha256": "5330c146b2b5d28a2c2400b13d5b90bab193d4d5938ed0bdea5cf92413af8d7e"
+    }
+  ]
+}
