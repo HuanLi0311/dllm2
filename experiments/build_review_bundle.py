@@ -157,14 +157,14 @@ def _check_released_payload(path):
             data = handle.read()
         if _has_forbidden(data):
             raise ValueError(f"identity-bearing string in expanded artifact: {path}")
-        json.loads(data)
-        return
+        return json.loads(data)
     data = path.read_bytes()
     if _has_forbidden(data) or _archive_has_forbidden(path):
         raise ValueError(f"identity-bearing string in public artifact: {path}")
+    return None
 
 
-def verify(release_manifest):
+def verify(release_manifest, require_internal=False):
     release_manifest = release_manifest.resolve()
     manifest_bytes = release_manifest.read_bytes()
     if _has_forbidden(manifest_bytes):
@@ -178,17 +178,35 @@ def verify(release_manifest):
     bundle_root = release_manifest.parent
     expected_bundle_files = {release_manifest}
     checked = 0
+    internal_sources_checked = 0
+    missing_internal_sources = 0
+    changed_internal_sources = 0
 
     for section in ("raw_artifacts", "sanitized_public_artifacts"):
         for artifact in manifest.get(section, []):
-            _check_hash(_root_path(artifact["internal_artifact"]), artifact["internal_sha256"], "internal artifact")
+            internal = _root_path(artifact["internal_artifact"])
+            if internal.is_file():
+                internal_sources_checked += 1
+                if _sha256(internal) != artifact["internal_sha256"]:
+                    changed_internal_sources += 1
+                    if require_internal:
+                        raise ValueError(f"internal artifact changed since release: {internal}")
+            else:
+                missing_internal_sources += 1
+                if require_internal:
+                    raise ValueError(f"missing internal artifact: {internal}")
             released = _root_path(artifact["release_artifact"])
             try:
                 released.relative_to(bundle_root)
             except ValueError as error:
                 raise ValueError(f"released artifact escapes bundle: {released}") from error
             _check_hash(released, artifact["release_sha256"], "released artifact")
-            _check_released_payload(released)
+            payload = _check_released_payload(released)
+            if section == "raw_artifacts" and payload.get("release_provenance") != {
+                "internal_artifact": artifact["internal_artifact"],
+                "internal_sha256": artifact["internal_sha256"],
+            }:
+                raise ValueError(f"release provenance mismatch: {released}")
             expected_bundle_files.add(released)
             checked += 1
 
@@ -204,7 +222,13 @@ def verify(release_manifest):
             f"bundle file-set mismatch: missing={expected_bundle_files - actual_bundle_files}, "
             f"extra={actual_bundle_files - expected_bundle_files}"
         )
-    return {"status": "ok", "checked_artifacts": checked, "bundle_files": len(actual_bundle_files)}
+    return {
+        "status": "ok", "checked_artifacts": checked,
+        "internal_sources_checked": internal_sources_checked,
+        "missing_internal_sources": missing_internal_sources,
+        "changed_internal_sources": changed_internal_sources,
+        "bundle_files": len(actual_bundle_files),
+    }
 
 
 def _self_check():
@@ -225,13 +249,18 @@ def _self_check():
             }]
         }))
         release_manifest, _ = build(submission, temporary / "bundle", [])
-        result = verify(release_manifest)
-        assert result == {"status": "ok", "checked_artifacts": 1, "bundle_files": 2}
+        result = verify(release_manifest, require_internal=True)
+        assert result == {
+            "status": "ok", "checked_artifacts": 1,
+            "internal_sources_checked": 1, "missing_internal_sources": 0,
+            "changed_internal_sources": 0,
+            "bundle_files": 2,
+        }
         released = next((temporary / "bundle" / "raw").rglob("*.json.gz"))
         original = released.read_bytes()
         released.write_bytes(original + b"tamper")
         try:
-            verify(release_manifest)
+            verify(release_manifest, require_internal=True)
         except ValueError:
             pass
         else:
@@ -245,6 +274,7 @@ def main(argv=None):
     parser.add_argument("--output-dir", type=Path, default=Path("paper/review_bundle"))
     parser.add_argument("--public", type=Path, nargs="*", default=[])
     parser.add_argument("--verify", type=Path)
+    parser.add_argument("--require-internal", action="store_true")
     parser.add_argument("--self-check", action="store_true")
     args = parser.parse_args(argv)
     if args.self_check:
@@ -252,7 +282,7 @@ def main(argv=None):
         return
     if args.verify:
         manifest = args.verify / "release_manifest.json" if args.verify.is_dir() else args.verify
-        print(json.dumps(verify(manifest)))
+        print(json.dumps(verify(manifest, require_internal=args.require_internal)))
         return
     if not args.submission_manifest:
         parser.error("--submission-manifest is required")
